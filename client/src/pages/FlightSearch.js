@@ -206,11 +206,15 @@ const FlightSearch = () => {
           <div className="search-form">
             <div className="form-row">
               <div className="form-group autocomplete-wrapper">
-                <label>
-                  <FaPlane /> From
+                <label htmlFor="origin">
+                  From
                 </label>
+                <div className="input-icon">
+                  <FaSearch />
+                </div>
                 <input
                   type="text"
+                  id="origin"
                   name="origin"
                   value={searchParams.origin}
                   onChange={handleChange}
@@ -218,7 +222,7 @@ const FlightSearch = () => {
                     e.stopPropagation();
                     if (originSuggestions.length > 0) setShowOriginSuggestions(true);
                   }}
-                  placeholder="Type city or airport name..."
+                  placeholder="City or airport"
                   required
                   autoComplete="off"
                 />
@@ -240,11 +244,15 @@ const FlightSearch = () => {
               </div>
 
               <div className="form-group autocomplete-wrapper">
-                <label>
-                  <FaPlane /> To
+                <label htmlFor="destination">
+                  To
                 </label>
+                <div className="input-icon">
+                  <FaSearch />
+                </div>
                 <input
                   type="text"
+                  id="destination"
                   name="destination"
                   value={searchParams.destination}
                   onChange={handleChange}
@@ -252,7 +260,7 @@ const FlightSearch = () => {
                     e.stopPropagation();
                     if (destinationSuggestions.length > 0) setShowDestinationSuggestions(true);
                   }}
-                  placeholder="Type city or airport name..."
+                  placeholder="City or airport"
                   required
                   autoComplete="off"
                 />
@@ -274,13 +282,14 @@ const FlightSearch = () => {
               </div>
             </div>
 
-            <div className="form-row">
+            <div className="form-row triple-row">
               <div className="form-group">
-                <label>
-                  <FaCalendar /> Departure
+                <label htmlFor="departureDate">
+                  Departure
                 </label>
                 <input
                   type="date"
+                  id="departureDate"
                   name="departureDate"
                   value={searchParams.departureDate}
                   onChange={handleChange}
@@ -290,42 +299,33 @@ const FlightSearch = () => {
               </div>
 
               <div className="form-group">
-                <label>
-                  <FaCalendar /> Return (Optional)
+                <label htmlFor="returnDate">
+                  Return
                 </label>
                 <input
                   type="date"
+                  id="returnDate"
                   name="returnDate"
                   value={searchParams.returnDate}
                   onChange={handleChange}
                   min={searchParams.departureDate}
                 />
               </div>
-            </div>
 
-            <div className="form-row">
               <div className="form-group">
-                <label>
-                  <FaUsers /> Passengers
+                <label htmlFor="adults">
+                  Travelers
                 </label>
                 <input
                   type="number"
+                  id="adults"
                   name="adults"
                   value={searchParams.adults}
                   onChange={handleChange}
                   min="1"
                   max="9"
+                  placeholder="1 traveler"
                 />
-              </div>
-
-              <div className="form-group">
-                <label>Class</label>
-                <select name="travelClass" value={searchParams.travelClass} onChange={handleChange}>
-                  <option value="ECONOMY">Economy</option>
-                  <option value="PREMIUM_ECONOMY">Premium Economy</option>
-                  <option value="BUSINESS">Business</option>
-                  <option value="FIRST">First Class</option>
-                </select>
               </div>
             </div>
 
