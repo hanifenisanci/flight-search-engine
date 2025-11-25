@@ -11,7 +11,7 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          <FaPlane /> WithPass
+          <img src="/withpass-logo.png" alt="WithPass" className="navbar-logo-img" />
         </Link>
 
         <ul className="navbar-menu">

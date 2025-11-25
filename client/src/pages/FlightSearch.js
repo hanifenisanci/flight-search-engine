@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { flightService } from '../services/flightService';
 import { toast } from 'react-toastify';
-import Chatbot from '../components/Chatbot';
 import { FaPlane, FaCalendar, FaUsers, FaSearch, FaUserCircle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import './FlightSearch.css';
@@ -421,8 +420,6 @@ const FlightSearch = () => {
           )}
         </div>
       )}
-
-      <Chatbot />
     </div>
   );
 };
