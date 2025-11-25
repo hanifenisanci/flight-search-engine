@@ -1,0 +1,25 @@
+{
+  "name": "flight-search-engine",
+  "version": "1.0.0",
+  "description": "Flight search engine with visa recommendations, chatbot, and premium membership",
+  "main": "server/index.js",
+  "scripts": {
+    "client": "cd client && npm start",
+    "server": "cd server && nodemon index.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm run build"
+  },
+  "keywords": [
+    "flight-search",
+    "travel",
+    "visa",
+    "chatbot",
+    "stripe"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

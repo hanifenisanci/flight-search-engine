@@ -1,0 +1,72 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const passport = require('./config/passport');
+const session = require('express-session');
+
+// Load env vars
+dotenv.config();
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const flightRoutes = require('./routes/flights');
+const paymentRoutes = require('./routes/payments');
+const chatbotRoutes = require('./routes/chatbot');
+
+const app = express();
+
+// Middleware
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Session middleware for passport
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'withpass-secret-key-2024',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Connect to MongoDB
+const connectDB = require('./config/database');
+connectDB();
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/flights', flightRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Server is running' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    error: err.message || 'Server Error',
+  });
+});
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
