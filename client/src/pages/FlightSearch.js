@@ -19,6 +19,7 @@ const FlightSearch = () => {
   const [flights, setFlights] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [visaFreeOnly, setVisaFreeOnly] = useState(false);
   const [activeTab, setActiveTab] = useState('search');
   const [originSuggestions, setOriginSuggestions] = useState([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState([]);
@@ -253,15 +254,16 @@ const FlightSearch = () => {
                   type="text"
                   id="destination"
                   name="destination"
-                  value={searchParams.destination}
+                  value={visaFreeOnly ? 'Visa-free destinations' : searchParams.destination}
                   onChange={handleChange}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (destinationSuggestions.length > 0) setShowDestinationSuggestions(true);
                   }}
-                  placeholder="City or airport"
-                  required
+                  placeholder={visaFreeOnly ? 'Will show visa-free options' : 'City or airport'}
+                  required={!visaFreeOnly}
                   autoComplete="off"
+                  disabled={visaFreeOnly}
                 />
                 {showDestinationSuggestions && destinationSuggestions.length > 0 && (
                   <div className="autocomplete-dropdown" onClick={(e) => e.stopPropagation()}>
@@ -329,6 +331,19 @@ const FlightSearch = () => {
             </div>
 
             <div className="search-buttons">
+              <label className="checkbox-label-inline">
+                <input
+                  type="checkbox"
+                  checked={visaFreeOnly}
+                  onChange={(e) => {
+                    setVisaFreeOnly(e.target.checked);
+                    if (e.target.checked) {
+                      setSearchParams({ ...searchParams, destination: '' });
+                    }
+                  }}
+                />
+                <span>My visa-free options</span>
+              </label>
               <button type="submit" className="btn btn-primary" disabled={loading}>
                 <FaSearch /> {loading ? 'Searching...' : 'Search Flights'}
               </button>
