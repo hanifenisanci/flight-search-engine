@@ -160,6 +160,20 @@
   border-color: #667eea;
 }
 
+.chatbot-login-prompt {
+  padding: 20px;
+  background: white;
+  border-top: 1px solid #eee;
+  border-radius: 0 0 16px 16px;
+}
+
+.chatbot-login-prompt .btn {
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+}
+
 .chatbot-input {
   display: flex;
   padding: 20px;

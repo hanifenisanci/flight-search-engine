@@ -331,19 +331,21 @@ const FlightSearch = () => {
             </div>
 
             <div className="search-buttons">
-              <label className="checkbox-label-inline">
-                <input
-                  type="checkbox"
-                  checked={visaFreeOnly}
-                  onChange={(e) => {
-                    setVisaFreeOnly(e.target.checked);
-                    if (e.target.checked) {
-                      setSearchParams({ ...searchParams, destination: '' });
-                    }
-                  }}
-                />
-                <span>My visa-free options</span>
-              </label>
+              {isAuthenticated && (
+                <label className="checkbox-label-inline">
+                  <input
+                    type="checkbox"
+                    checked={visaFreeOnly}
+                    onChange={(e) => {
+                      setVisaFreeOnly(e.target.checked);
+                      if (e.target.checked) {
+                        setSearchParams({ ...searchParams, destination: '' });
+                      }
+                    }}
+                  />
+                  <span>My visa-free options</span>
+                </label>
+              )}
               <button type="submit" className="btn btn-primary" disabled={loading}>
                 <FaSearch /> {loading ? 'Searching...' : 'Search Flights'}
               </button>

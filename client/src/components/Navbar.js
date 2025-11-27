@@ -1,11 +1,24 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaPlane, FaUser, FaCrown, FaBlog, FaNewspaper } from 'react-icons/fa';
+import { FaPlane, FaUser, FaCrown, FaBlog, FaNewspaper, FaChevronDown } from 'react-icons/fa';
 import './Navbar.css';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <nav className="navbar">
@@ -32,29 +45,34 @@ const Navbar = () => {
                   <FaBlog /> Blog
                 </Link>
               </li>
-              <li>
-                <Link to="/profile" className="navbar-link">
-                  <FaUser /> Profile
-                </Link>
-              </li>
-              {!user?.isPremium && (
-                <li>
-                  <Link to="/premium" className="navbar-link premium-link">
-                    <FaCrown /> Go Premium
-                  </Link>
-                </li>
-              )}
-              {user?.isPremium && (
-                <li>
-                  <span className="premium-badge">
-                    <FaCrown /> Premium
-                  </span>
-                </li>
-              )}
-              <li>
-                <button onClick={logout} className="navbar-btn">
-                  Logout
+              <li className="navbar-dropdown" ref={dropdownRef}>
+                <button 
+                  type="button"
+                  className="navbar-user-btn" 
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                >
+                  <FaUser /> {user?.name || 'User'} <FaChevronDown />
                 </button>
+                {dropdownOpen && (
+                  <div className="navbar-dropdown-menu">
+                    <Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                      <FaUser /> Profile
+                    </Link>
+                    {!user?.isPremium && (
+                      <Link to="/premium" className="dropdown-item premium-item" onClick={() => setDropdownOpen(false)}>
+                        <FaCrown /> Go Premium
+                      </Link>
+                    )}
+                    {user?.isPremium && (
+                      <div className="dropdown-item premium-badge-item">
+                        <FaCrown /> Premium Member
+                      </div>
+                    )}
+                    <button type="button" onClick={() => { logout(); setDropdownOpen(false); }} className="dropdown-item logout-item">
+                      Logout
+                    </button>
+                  </div>
+                )}
               </li>
             </>
           ) : (
@@ -75,13 +93,8 @@ const Navbar = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/login" className="navbar-link">
+                <Link to="/login" className="navbar-btn-link">
                   Login
-                </Link>
-              </li>
-              <li>
-                <Link to="/register" className="navbar-btn-link">
-                  Register
                 </Link>
               </li>
             </>

@@ -5,10 +5,9 @@ const {
   getSuggestions,
   clearSession,
 } = require('../controllers/chatbotController');
-const { protect } = require('../middleware/auth');
 
-router.post('/message', protect, sendMessage);
-router.get('/suggestions', protect, getSuggestions);
-router.delete('/session', protect, clearSession);
+router.post('/message', sendMessage);
+router.get('/suggestions', getSuggestions);
+router.delete('/session', clearSession);
 
 module.exports = router;

@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { chatbotService } from '../services/flightService';
 import { FaComments, FaTimes, FaPaperPlane } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import './Chatbot.css';
 
 const Chatbot = () => {
+  const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -13,17 +16,28 @@ const Chatbot = () => {
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      loadSuggestions();
-      // Add welcome message
-      setMessages([
-        {
-          type: 'bot',
-          text: 'Hello! I\'m your travel assistant. How can I help you today?',
-          timestamp: new Date(),
-        },
-      ]);
+      if (!isAuthenticated) {
+        // Show login message for non-authenticated users
+        setMessages([
+          {
+            type: 'bot',
+            text: 'Please log in to talk to me!',
+            timestamp: new Date(),
+          },
+        ]);
+      } else {
+        loadSuggestions();
+        // Add welcome message for authenticated users
+        setMessages([
+          {
+            type: 'bot',
+            text: 'Hello! I\'m your travel assistant. How can I help you today?',
+            timestamp: new Date(),
+          },
+        ]);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isAuthenticated]);
 
   useEffect(() => {
     scrollToBottom();
@@ -44,6 +58,11 @@ const Chatbot = () => {
 
   const handleSend = async (message = input) => {
     if (!message.trim()) return;
+    
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      return;
+    }
 
     // Add user message
     const userMessage = {
@@ -137,7 +156,7 @@ const Chatbot = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {suggestions.length > 0 && messages.length <= 1 && (
+          {isAuthenticated && suggestions.length > 0 && messages.length <= 1 && (
             <div className="chatbot-suggestions">
               {suggestions.map((suggestion, index) => (
                 <button
@@ -152,24 +171,32 @@ const Chatbot = () => {
             </div>
           )}
 
-          <div className="chatbot-input">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Type your message..."
-              disabled={loading}
-            />
-            <button
-              type="button"
-              onClick={() => handleSend()}
-              disabled={loading || !input.trim()}
-              className="send-btn"
-            >
-              <FaPaperPlane />
-            </button>
-          </div>
+          {!isAuthenticated ? (
+            <div className="chatbot-login-prompt">
+              <Link to="/login" className="btn btn-primary btn-block">
+                Login to Chat
+              </Link>
+            </div>
+          ) : (
+            <div className="chatbot-input">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Type your message..."
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => handleSend()}
+                disabled={loading || !input.trim()}
+                className="send-btn"
+              >
+                <FaPaperPlane />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
