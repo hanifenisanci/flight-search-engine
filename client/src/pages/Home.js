@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Chatbot from '../components/Chatbot';
 import Footer from '../components/Footer';
+import { blogArticles } from './Blog';
 import './Home.css';
 
 const Home = () => {
@@ -45,7 +46,8 @@ const Home = () => {
 
   return (
     <div className="home-dark">
-      <div className="hero-section">
+      <div className="home-content-wrapper">
+        <div className="hero-section">
         <div className="hero-background">
           <div className="hero-text">
             <h1>Discover Visa-Free Destinations</h1>
@@ -59,17 +61,27 @@ const Home = () => {
         </div>
       </div>
 
-      <h2 className="section-title">Featured Destinations</h2>
-      <div className="featured-scroll">
-        {featuredDestinations.map((dest, index) => (
-          <div key={index} className="featured-card">
-            <div className="featured-image" style={{ backgroundImage: `url(${dest.image})` }}></div>
-            <div className="featured-info">
-              <p className="featured-title">{dest.title}</p>
-              <p className="featured-desc">{dest.description}</p>
-            </div>
-          </div>
-        ))}
+      <div className="blog-section">
+        <div className="section-header-with-link">
+          <h2 className="section-title">Latest Travel Guides</h2>
+          <Link to="/blog" className="see-more-link">See More →</Link>
+        </div>
+        <div className="featured-scroll">
+          {blogArticles.slice(0, 4).map((article) => (
+            <Link 
+              key={article.id} 
+              to="/blog" 
+              state={{ selectedArticle: article }}
+              className="featured-card blog-card"
+            >
+              <div className="featured-image" style={{ backgroundImage: `url(${article.image})` }}></div>
+              <div className="featured-info">
+                <p className="featured-title">{article.title}</p>
+                <p className="featured-desc">{article.excerpt.substring(0, 100)}...</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
 
       <h2 className="section-title">Popular Destinations</h2>
@@ -110,11 +122,11 @@ const Home = () => {
         </div>
       </div>
 
-      <div className="cta-section">
-        <h1>Ready to Explore?</h1>
-        <Link to="/search" className="cta-button">Start Your Adventure</Link>
+        <div className="cta-section">
+          <h1>Ready to Explore?</h1>
+          <Link to="/search" className="cta-button">Start Your Adventure</Link>
+        </div>
       </div>
-
       {isAuthenticated && <Chatbot />}
       <Footer />
     </div>

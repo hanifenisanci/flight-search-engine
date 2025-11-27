@@ -127,7 +127,8 @@ const Premium = () => {
 
   return (
     <div className="premium-page">
-      <div className="premium-header">
+      <div className="premium-content-wrapper">
+        <div className="premium-header">
         <FaCrown className="crown-icon" />
         <h1>Upgrade to Premium</h1>
         <p>Unlock advanced features and enhance your travel experience</p>
@@ -181,6 +182,7 @@ const Premium = () => {
             ))}
           </tbody>
         </table>
+      </div>
       </div>
       <Footer />
     </div>

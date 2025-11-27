@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaSearch, FaCalendar, FaUser } from 'react-icons/fa';
+import { useLocation } from 'react-router-dom';
 import Footer from '../components/Footer';
 import './Blog.css';
 
-const Blog = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredArticles, setFilteredArticles] = useState([]);
-  const [selectedArticle, setSelectedArticle] = useState(null);
-
-  const articles = [
+export const blogArticles = [
     {
       id: 1,
       title: 'Top 10 Visa-Free Destinations for Turkish Citizens in 2025',
@@ -139,11 +135,23 @@ const Blog = () => {
     }
   ];
 
+const Blog = () => {
+  const location = useLocation();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredArticles, setFilteredArticles] = useState([]);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+
+  useEffect(() => {
+    if (location.state?.selectedArticle) {
+      setSelectedArticle(location.state.selectedArticle);
+    }
+  }, [location]);
+
   React.useEffect(() => {
     if (searchQuery.trim() === '') {
-      setFilteredArticles(articles);
+      setFilteredArticles(blogArticles);
     } else {
-      const filtered = articles.filter(article =>
+      const filtered = blogArticles.filter(article =>
         article.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         article.excerpt?.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -154,8 +162,9 @@ const Blog = () => {
   if (selectedArticle) {
     return (
       <div className="blog-page">
-        <div className="blog-container">
-          <button className="back-button" onClick={() => setSelectedArticle(null)}>
+        <div className="blog-content-wrapper">
+          <div className="blog-container">
+            <button className="back-button" onClick={() => setSelectedArticle(null)}>
             ← Back to Articles
           </button>
           <article className="article-full">
@@ -170,17 +179,19 @@ const Blog = () => {
             </div>
           </article>
         </div>
+        </div>
         <Footer />
       </div>
     );
   }
 
-  const displayArticles = filteredArticles.length > 0 ? filteredArticles : articles;
+  const displayArticles = filteredArticles.length > 0 ? filteredArticles : blogArticles;
 
   return (
     <div className="blog-page">
-      <div className="blog-container">
-        <div className="blog-header">
+      <div className="blog-content-wrapper">
+        <div className="blog-container">
+          <div className="blog-header">
           <h1>WithPass Travel Blog</h1>
           <div className="search-bar">
             <FaSearch className="search-icon" />
@@ -240,6 +251,7 @@ const Blog = () => {
             )}
           </div>
         </div>
+      </div>
       </div>
       <Footer />
     </div>

@@ -184,7 +184,8 @@ const FlightSearch = () => {
 
   return (
     <div className="flight-search">
-      {!isAuthenticated && (
+      <div className="flight-search-content">
+        {!isAuthenticated && (
         <div className="personalization-banner">
           <div className="banner-icon">
             <FaUserCircle />
@@ -438,6 +439,7 @@ const FlightSearch = () => {
           )}
         </div>
       )}
+      </div>
       <Footer />
     </div>
   );

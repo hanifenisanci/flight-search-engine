@@ -64,9 +64,9 @@ const Profile = () => {
   const [visas, setVisas] = useState([]);
   const [newVisa, setNewVisa] = useState({
     country: '',
-    visaType: '',
+    visaType: 'Tourist',
     validUntil: '',
-    issueDate: '',
+    issueDate: new Date().toISOString().split('T')[0],
   });
   const [showVisaForm, setShowVisaForm] = useState(false);
   const [savedFlights, setSavedFlights] = useState([]);
@@ -135,7 +135,7 @@ const Profile = () => {
     try {
       const response = await userService.addVisa(newVisa);
       setVisas(response.data.visas);
-      setNewVisa({ country: '', visaType: '', validUntil: '', issueDate: '' });
+      setNewVisa({ country: '', visaType: 'Tourist', validUntil: '', issueDate: new Date().toISOString().split('T')[0] });
       setShowVisaForm(false);
       toast.success('Visa added successfully!');
     } catch (error) {
@@ -166,9 +166,10 @@ const Profile = () => {
 
   return (
     <div className="profile-page">
-      <h1>My Profile</h1>
+      <div className="profile-content">
+        <h1>My Profile</h1>
 
-      <div className="profile-section">
+        <div className="profile-section">
         <div className="section-header">
           <h2>
             <FaUser /> Personal Information
@@ -285,44 +286,14 @@ const Profile = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Visa Type</label>
-                  <select
-                    name="visaType"
-                    value={newVisa.visaType}
-                    onChange={handleVisaChange}
-                    required
-                  >
-                    <option value="">Select visa type</option>
-                    <option value="Tourist">Tourist</option>
-                    <option value="Work">Work</option>
-                    <option value="Student">Student</option>
-                    <option value="Business">Business</option>
-                    <option value="Transit">Transit</option>
-                    <option value="Residence">Residence</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Issue Date</label>
-                  <input
-                    type="date"
-                    name="issueDate"
-                    value={newVisa.issueDate}
-                    onChange={handleVisaChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Valid Until</label>
+                  <label>Expiration Date</label>
                   <input
                     type="date"
                     name="validUntil"
                     value={newVisa.validUntil}
                     onChange={handleVisaChange}
                     required
+                    min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
               </div>
@@ -351,7 +322,7 @@ const Profile = () => {
               <div key={visa._id} className="visa-card">
                 <div className="visa-info">
                   <h3>{countries.find(c => c.code === visa.country)?.name || visa.country}</h3>
-                  <p>Type: {visa.visaType} • Expires: {new Date(visa.validUntil).toLocaleDateString()}</p>
+                  <p>Expires: {new Date(visa.validUntil).toLocaleDateString()}</p>
                 </div>
                 <button
                   className="btn btn-danger btn-sm"
@@ -454,6 +425,7 @@ const Profile = () => {
             </div>
           )}
         </div>
+      </div>
       </div>
       <Footer />
     </div>

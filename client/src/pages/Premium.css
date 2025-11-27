@@ -1,6 +1,13 @@
 .premium-page {
-  min-height: calc(100vh - 80px);
+  min-height: 100vh;
   background: linear-gradient(135deg, #191023 0%, #1a0b2e 50%, #16001e 100%);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.premium-content-wrapper {
+  flex: 1;
   padding: 2rem 0;
 }
 

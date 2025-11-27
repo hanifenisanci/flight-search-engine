@@ -65,8 +65,9 @@ const News = () => {
 
   return (
     <div className="news-page">
-      <div className="news-container">
-        <div className="news-header">
+      <div className="news-content-wrapper">
+        <div className="news-container">
+          <div className="news-header">
           <h1>Travel News & Visa Updates</h1>
           <div className="search-bar">
             <FaSearch className="search-icon" />
@@ -150,6 +151,7 @@ const News = () => {
             </div>
           )}
         </div>
+      </div>
       </div>
       <Footer />
     </div>
