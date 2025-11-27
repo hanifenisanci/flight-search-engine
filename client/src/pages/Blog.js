@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaSearch, FaCalendar, FaUser } from 'react-icons/fa';
+import Footer from '../components/Footer';
 import './Blog.css';
 
 const Blog = () => {
@@ -169,6 +170,7 @@ const Blog = () => {
             </div>
           </article>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -239,6 +241,7 @@ const Blog = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

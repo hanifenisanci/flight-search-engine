@@ -216,6 +216,7 @@
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  justify-content: center;
 }
 
 .featured-scroll::-webkit-scrollbar {

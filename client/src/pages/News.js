@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaSearch, FaCalendar, FaExternalLinkAlt } from 'react-icons/fa';
+import Footer from '../components/Footer';
 import './News.css';
 
 const News = () => {
@@ -150,6 +151,7 @@ const News = () => {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

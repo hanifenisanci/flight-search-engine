@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { paymentService } from '../services/flightService';
 import { toast } from 'react-toastify';
 import { FaCrown, FaCheck, FaTimes } from 'react-icons/fa';
+import Footer from '../components/Footer';
 import './Premium.css';
 
 const Premium = () => {
@@ -119,6 +120,7 @@ const Premium = () => {
               ))}
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -180,6 +182,7 @@ const Premium = () => {
           </tbody>
         </table>
       </div>
+      <Footer />
     </div>
   );
 };

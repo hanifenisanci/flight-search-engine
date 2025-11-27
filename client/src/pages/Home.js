@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Chatbot from '../components/Chatbot';
+import Footer from '../components/Footer';
 import './Home.css';
 
 const Home = () => {
@@ -115,6 +116,7 @@ const Home = () => {
       </div>
 
       {isAuthenticated && <Chatbot />}
+      <Footer />
     </div>
   );
 };

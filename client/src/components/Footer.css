@@ -1,0 +1,25 @@
+.app-footer {
+  background: linear-gradient(135deg, #0d0618 0%, #0a0411 100%);
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  padding: 1.5rem 2rem;
+  font-size: 0.9rem;
+  border-top: 1px solid rgba(102, 126, 234, 0.2);
+  margin-top: auto;
+}
+
+.app-footer p {
+  margin: 0;
+}
+
+.app-footer a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.app-footer a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}

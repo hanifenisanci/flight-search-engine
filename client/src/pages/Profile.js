@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { userService, flightService } from '../services/flightService';
 import { toast } from 'react-toastify';
 import { FaUser, FaPassport, FaPlus, FaTrash, FaPlane, FaClock, FaMoneyBillWave } from 'react-icons/fa';
+import Footer from '../components/Footer';
 import './Profile.css';
 
 // Common countries list
@@ -182,91 +183,70 @@ const Profile = () => {
         <div className="profile-card">
           {editing ? (
             <>
-              <div className="form-group">
-                <label>Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={profile.name}
-                  onChange={handleProfileChange}
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={profile.name}
+                    onChange={handleProfileChange}
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Email Address</label>
+                  <input
+                    type="email"
+                    value={user?.email || ''}
+                    disabled
+                    style={{ opacity: 0.7, cursor: 'not-allowed' }}
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>Citizenship</label>
-                <select
-                  name="citizenship"
-                  value={profile.citizenship}
-                  onChange={handleProfileChange}
-                  required
-                >
-                  <option value="">Select your country</option>
-                  {countries.map((country) => (
-                    <option key={country.code} value={country.code}>
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Passport Number</label>
-                <input
-                  type="text"
-                  name="passportNumber"
-                  value={profile.passportNumber}
-                  onChange={handleProfileChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Date of Birth</label>
-                <input
-                  type="date"
-                  name="dateOfBirth"
-                  value={profile.dateOfBirth}
-                  onChange={handleProfileChange}
-                />
+              <div className="form-row" style={{ gridTemplateColumns: '1fr' }}>
+                <div className="form-group">
+                  <label>Nationality</label>
+                  <select
+                    name="citizenship"
+                    value={profile.citizenship}
+                    onChange={handleProfileChange}
+                    required
+                  >
+                    <option value="">Select your country</option>
+                    {countries.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="profile-actions">
-                <button className="btn btn-primary" onClick={handleSaveProfile}>
-                  Save Changes
-                </button>
                 <button className="btn btn-secondary" onClick={() => setEditing(false)}>
                   Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleSaveProfile}>
+                  Save Changes
                 </button>
               </div>
             </>
           ) : (
             <div className="profile-info">
               <div className="info-item">
-                <strong>Name:</strong> {profile.name}
+                <strong>Full Name</strong>
+                <span>{profile.name}</span>
               </div>
               <div className="info-item">
-                <strong>Email:</strong> {user?.email}
+                <strong>Email Address</strong>
+                <span>{user?.email}</span>
               </div>
               <div className="info-item">
-                <strong>Citizenship:</strong> {profile.citizenship}
-              </div>
-              {profile.passportNumber && (
-                <div className="info-item">
-                  <strong>Passport:</strong> {profile.passportNumber}
-                </div>
-              )}
-              {profile.dateOfBirth && (
-                <div className="info-item">
-                  <strong>Date of Birth:</strong>{' '}
-                  {new Date(profile.dateOfBirth).toLocaleDateString()}
-                </div>
-              )}
-              <div className="info-item">
-                <strong>Account Status:</strong>{' '}
-                {user?.isPremium ? (
-                  <span className="badge badge-premium">Premium</span>
-                ) : (
-                  <span className="badge">Free</span>
-                )}
+                <strong>Nationality</strong>
+                <span>{countries.find(c => c.code === profile.citizenship)?.name || profile.citizenship}</span>
               </div>
             </div>
           )}
@@ -348,15 +328,15 @@ const Profile = () => {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  Add Visa
-                </button>
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setShowVisaForm(false)}
                 >
                   Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Add Visa
                 </button>
               </div>
             </form>
@@ -370,16 +350,13 @@ const Profile = () => {
             visas.map((visa) => (
               <div key={visa._id} className="visa-card">
                 <div className="visa-info">
-                  <h3>{visa.country}</h3>
-                  <p>Type: {visa.visaType}</p>
-                  <p>
-                    Valid: {new Date(visa.issueDate).toLocaleDateString()} -{' '}
-                    {new Date(visa.validUntil).toLocaleDateString()}
-                  </p>
+                  <h3>{countries.find(c => c.code === visa.country)?.name || visa.country}</h3>
+                  <p>Type: {visa.visaType} • Expires: {new Date(visa.validUntil).toLocaleDateString()}</p>
                 </div>
                 <button
                   className="btn btn-danger btn-sm"
                   onClick={() => handleRemoveVisa(visa._id)}
+                  title="Delete visa"
                 >
                   <FaTrash />
                 </button>
@@ -478,6 +455,7 @@ const Profile = () => {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

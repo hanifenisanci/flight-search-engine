@@ -4,6 +4,7 @@ import { flightService } from '../services/flightService';
 import { toast } from 'react-toastify';
 import { FaPlane, FaCalendar, FaUsers, FaSearch, FaUserCircle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import Footer from '../components/Footer';
 import './FlightSearch.css';
 
 const FlightSearch = () => {
@@ -437,6 +438,7 @@ const FlightSearch = () => {
           )}
         </div>
       )}
+      <Footer />
     </div>
   );
 };
