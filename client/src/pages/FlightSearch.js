@@ -22,6 +22,7 @@ const FlightSearch = () => {
   const [loading, setLoading] = useState(false);
   const [visaFreeOnly, setVisaFreeOnly] = useState(false);
   const [activeTab, setActiveTab] = useState('search');
+  const [oneWay, setOneWay] = useState(false);
   const [originSuggestions, setOriginSuggestions] = useState([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState([]);
   const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
@@ -234,7 +235,11 @@ const FlightSearch = () => {
                       <div
                         key={airport.id}
                         className="autocomplete-item"
-                        onClick={() => selectAirport(airport, 'origin')}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          selectAirport(airport, 'origin');
+                        }}
                       >
                         <strong>{airport.iataCode}</strong> - {airport.name}
                         <br />
@@ -273,7 +278,11 @@ const FlightSearch = () => {
                       <div
                         key={airport.id}
                         className="autocomplete-item"
-                        onClick={() => selectAirport(airport, 'destination')}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          selectAirport(airport, 'destination');
+                        }}
                       >
                         <strong>{airport.iataCode}</strong> - {airport.name}
                         <br />
@@ -301,10 +310,8 @@ const FlightSearch = () => {
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="returnDate">
-                  Return
-                </label>
+              <div className="form-group return-group">
+                <label htmlFor="returnDate">Return</label>
                 <input
                   type="date"
                   id="returnDate"
@@ -312,7 +319,22 @@ const FlightSearch = () => {
                   value={searchParams.returnDate}
                   onChange={handleChange}
                   min={searchParams.departureDate}
+                  disabled={oneWay}
                 />
+                <label className="oneway-toggle below-toggle">
+                  <input
+                    type="checkbox"
+                    checked={oneWay}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setOneWay(checked);
+                      if (checked) {
+                        setSearchParams({ ...searchParams, returnDate: '' });
+                      }
+                    }}
+                  />
+                  <span>One way</span>
+                </label>
               </div>
 
               <div className="form-group">
