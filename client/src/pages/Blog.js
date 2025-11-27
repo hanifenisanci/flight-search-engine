@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { FaSearch, FaCalendar, FaUser } from 'react-icons/fa';
 import './Blog.css';
 
 const Blog = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredArticles, setFilteredArticles] = useState([]);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+
   const articles = [
     {
       id: 1,
@@ -133,11 +138,21 @@ const Blog = () => {
     }
   ];
 
-  const [selectedArticle, setSelectedArticle] = React.useState(null);
+  React.useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredArticles(articles);
+    } else {
+      const filtered = articles.filter(article =>
+        article.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.excerpt?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredArticles(filtered);
+    }
+  }, [searchQuery]);
 
   if (selectedArticle) {
     return (
-      <div className="blog">
+      <div className="blog-page">
         <div className="blog-container">
           <button className="back-button" onClick={() => setSelectedArticle(null)}>
             ← Back to Articles
@@ -147,9 +162,8 @@ const Blog = () => {
             <div className="article-full-content">
               <h1>{selectedArticle.title}</h1>
               <div className="article-meta">
-                <span>By {selectedArticle.author}</span>
-                <span>•</span>
-                <span>{selectedArticle.date}</span>
+                <span><FaUser /> {selectedArticle.author}</span>
+                <span><FaCalendar /> {selectedArticle.date}</span>
               </div>
               <div dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
             </div>
@@ -159,30 +173,70 @@ const Blog = () => {
     );
   }
 
-  return (
-    <div className="blog">
-      <div className="blog-header">
-        <h1>WithPass Travel Blog</h1>
-        <p>Travel tips, visa guides, and destination insights for smart travelers</p>
-      </div>
+  const displayArticles = filteredArticles.length > 0 ? filteredArticles : articles;
 
+  return (
+    <div className="blog-page">
       <div className="blog-container">
-        <div className="articles-grid">
-          {articles.map((article) => (
-            <div key={article.id} className="article-card" onClick={() => setSelectedArticle(article)}>
-              <img src={article.image} alt={article.title} className="article-image" />
-              <div className="article-content">
-                <h2>{article.title}</h2>
-                <div className="article-meta">
-                  <span>{article.author}</span>
-                  <span>•</span>
-                  <span>{article.date}</span>
+        <div className="blog-header">
+          <h1>WithPass Travel Blog</h1>
+          <div className="search-bar">
+            <FaSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search articles..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="blog-content">
+          <div className="articles-grid">
+            {displayArticles.length === 0 ? (
+              <div className="no-results">No articles found</div>
+            ) : (
+              <>
+                {/* Featured Article */}
+                {displayArticles[0] && (
+                  <div className="featured-article" onClick={() => setSelectedArticle(displayArticles[0])}>
+                    <img src={displayArticles[0].image} alt={displayArticles[0].title} />
+                    <div className="featured-content">
+                      <span className="featured-badge">FEATURED ARTICLE</span>
+                      <h2>{displayArticles[0].title}</h2>
+                      <p>{displayArticles[0].excerpt}</p>
+                      <div className="article-meta">
+                        <span className="date">
+                          <FaCalendar /> {displayArticles[0].date}
+                        </span>
+                        <button className="read-more">Read More →</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Regular Articles */}
+                <div className="articles-list">
+                  {displayArticles.slice(1).map((article) => (
+                    <div key={article.id} className="article-card" onClick={() => setSelectedArticle(article)}>
+                      <img src={article.image} alt={article.title} className="article-image" />
+                      <div className="article-content">
+                        <span className="article-category">TRAVEL GUIDE</span>
+                        <h3>{article.title}</h3>
+                        <p>{article.excerpt?.substring(0, 150)}...</p>
+                        <div className="article-footer">
+                          <span className="date">
+                            <FaCalendar /> {article.date}
+                          </span>
+                          <button className="read-link">Read More →</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <p>{article.excerpt}</p>
-                <button className="read-more">Read More →</button>
-              </div>
-            </div>
-          ))}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
