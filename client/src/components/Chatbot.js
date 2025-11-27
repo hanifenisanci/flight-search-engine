@@ -79,12 +79,25 @@ const Chatbot = () => {
     handleSend(suggestion);
   };
 
+  const handleToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
+
+  const handleCloseClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(false);
+  };
+
   return (
-    <>
+    <div style={{ position: 'fixed', zIndex: 9999 }}>
       {/* Chat Toggle Button */}
       <button
+        type="button"
         className="chatbot-toggle"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         aria-label="Toggle chatbot"
       >
         {isOpen ? <FaTimes /> : <FaComments />}
@@ -95,7 +108,7 @@ const Chatbot = () => {
         <div className="chatbot-window">
           <div className="chatbot-header">
             <h3>Travel Assistant</h3>
-            <button onClick={() => setIsOpen(false)} className="close-btn">
+            <button type="button" onClick={handleCloseClick} className="close-btn">
               <FaTimes />
             </button>
           </div>
@@ -128,6 +141,7 @@ const Chatbot = () => {
             <div className="chatbot-suggestions">
               {suggestions.map((suggestion, index) => (
                 <button
+                  type="button"
                   key={index}
                   className="suggestion-btn"
                   onClick={() => handleSuggestionClick(suggestion)}
@@ -148,6 +162,7 @@ const Chatbot = () => {
               disabled={loading}
             />
             <button
+              type="button"
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
               className="send-btn"
@@ -157,7 +172,7 @@ const Chatbot = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
