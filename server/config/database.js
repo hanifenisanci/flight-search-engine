@@ -23,7 +23,8 @@ const connectDB = async () => {
   } catch (error) {
     console.error(`MongoDB Connection Error: ${error.message}`);
     console.error('Please check your internet connection and MongoDB URI');
-    process.exit(1);
+    console.warn('⚠️  Server will continue running without MongoDB. Authentication features will be limited.');
+    // Don't exit - let the server run without MongoDB for basic functionality
   }
 };
 

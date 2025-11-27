@@ -40,9 +40,11 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Connect to MongoDB
+// Connect to MongoDB (non-blocking)
 const connectDB = require('./config/database');
-connectDB();
+connectDB().catch(err => {
+  console.error('MongoDB connection failed, but server will continue:', err.message);
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
