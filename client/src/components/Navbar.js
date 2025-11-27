@@ -19,7 +19,7 @@ const Navbar = () => {
             <>
               <li>
                 <Link to="/search" className="navbar-link">
-                  Search Flights
+                  <FaPlane /> Flight Search
                 </Link>
               </li>
               <li>
@@ -59,6 +59,11 @@ const Navbar = () => {
             </>
           ) : (
             <>
+              <li>
+                <Link to="/search" className="navbar-link">
+                  <FaPlane /> Flight Search
+                </Link>
+              </li>
               <li>
                 <Link to="/news" className="navbar-link">
                   <FaNewspaper /> News
