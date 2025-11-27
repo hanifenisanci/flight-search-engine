@@ -16,6 +16,7 @@ import Premium from './pages/Premium';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
 import Blog from './pages/Blog';
+import News from './pages/News';
 
 import './App.css';
 
@@ -50,6 +51,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/news" element={<News />} />
               <Route path="/blog" element={<Blog />} />
               <Route
                 path="/premium"

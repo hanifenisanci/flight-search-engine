@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaPlane, FaUser, FaCrown, FaBlog } from 'react-icons/fa';
+import { FaPlane, FaUser, FaCrown, FaBlog, FaNewspaper } from 'react-icons/fa';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -20,6 +20,11 @@ const Navbar = () => {
               <li>
                 <Link to="/search" className="navbar-link">
                   Search Flights
+                </Link>
+              </li>
+              <li>
+                <Link to="/news" className="navbar-link">
+                  <FaNewspaper /> News
                 </Link>
               </li>
               <li>
@@ -54,6 +59,11 @@ const Navbar = () => {
             </>
           ) : (
             <>
+              <li>
+                <Link to="/news" className="navbar-link">
+                  <FaNewspaper /> News
+                </Link>
+              </li>
               <li>
                 <Link to="/blog" className="navbar-link">
                   <FaBlog /> Blog
