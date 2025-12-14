@@ -19,8 +19,9 @@ const Chatbot = () => {
     if (isOpen && messages.length === 0) {
       loadSuggestions();
       // Add welcome message
-      const welcomeText = isAuthenticated 
-        ? 'Hello! I\'m your travel assistant. How can I help you today?' 
+      const firstName = user?.name ? user.name.split(' ')[0] : null;
+      const welcomeText = isAuthenticated && firstName
+        ? `Hello ${firstName}! I'm your travel assistant. How can I help you today?` 
         : 'Hello! I\'m your travel assistant. How can I help you today?';
       
       setMessages([
@@ -31,7 +32,7 @@ const Chatbot = () => {
         },
       ]);
     }
-  }, [isOpen, isAuthenticated]);
+  }, [isOpen, isAuthenticated, user?.name]);
 
   useEffect(() => {
     scrollToBottom();
@@ -66,7 +67,11 @@ const Chatbot = () => {
     setLoading(true);
 
     try {
-      const response = await chatbotService.sendMessage(message);
+      const firstName = user?.name ? user.name.split(' ')[0] : null;
+      const response = await chatbotService.sendMessage(message, {
+        name: firstName,
+        citizenship: user?.citizenship
+      });
       setMessageCount(prev => prev + 1);
       const botMessage = {
         type: 'bot',

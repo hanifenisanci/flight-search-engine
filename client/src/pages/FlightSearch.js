@@ -653,53 +653,101 @@ const FlightSearch = () => {
                     </div>
                     
                     {/* Outbound Flight */}
-                    <div className="flight-details">
-                      <div className="flight-route-label">Outbound</div>
-                      <div className="flight-route">
-                        <div className="flight-time-info">
-                          <span className="airport-code">{searchParams.origin}</span>
-                          <span className="flight-time">{outboundDeparture}</span>
-                        </div>
-                        <div className="route-line">
-                          <FaPlane className="plane-icon" />
-                        </div>
-                        <div className="flight-time-info">
-                          <span className="airport-code">{destination}</span>
-                          <span className="flight-time">{outboundArrival}</span>
-                        </div>
+                    <div className="flight-details styled-timeline">
+                      <div className="flight-route-label">OUTBOUND</div>
+                      <div className="timeline-row">
+                        {flight.itineraries?.[0]?.segments && (
+                          <>
+                            <div className="timeline-times">
+                              <span className="timeline-time">{formatTime(flight.itineraries[0].segments[0].departure.at)}</span>
+                              <span className="timeline-airport">{flight.itineraries[0].segments[0].departure.iataCode}</span>
+                            </div>
+                            <div className="timeline-bar">
+                              {flight.itineraries[0].segments.map((segment, idx, arr) => (
+                                <React.Fragment key={idx}>
+                                  {idx > 0 && (
+                                    <div className="timeline-stop">
+                                      <div className="timeline-dot" />
+                                      <div className="timeline-stop-label">{segment.departure.iataCode}</div>
+                                      <div className="timeline-layover">
+                                        {(() => {
+                                          const prevSegment = arr[idx - 1];
+                                          const layoverTime = new Date(segment.departure.at) - new Date(prevSegment.arrival.at);
+                                          const layoverHours = Math.floor(layoverTime / (1000 * 60 * 60));
+                                          const layoverMinutes = Math.floor((layoverTime % (1000 * 60 * 60)) / (1000 * 60));
+                                          return (
+                                            <span className="timeline-layover-time">{layoverHours}h {layoverMinutes}m layover</span>
+                                          );
+                                        })()}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {idx < arr.length - 1 && <div className="timeline-line" />}
+                                </React.Fragment>
+                              ))}
+                            </div>
+                            <div className="timeline-times">
+                              <span className="timeline-time">{formatTime(flight.itineraries[0].segments[flight.itineraries[0].segments.length-1].arrival.at)}</span>
+                              <span className="timeline-airport">{flight.itineraries[0].segments[flight.itineraries[0].segments.length-1].arrival.iataCode}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      
-                      <div className="flight-meta">
-                        <div className="meta-item">
-                          <FaClock className="meta-icon" />
-                          <span>{outboundDuration || 'Duration not available'}</span>
-                        </div>
+                      <div className="flight-meta timeline-meta">
+                        <span className="meta-item"><FaClock className="meta-icon" /> {outboundDuration || 'Duration not available'}</span>
+                        {flight.itineraries?.[0]?.segments && flight.itineraries[0].segments.length > 1 && (
+                          <span className="meta-item stops-label">{flight.itineraries[0].segments.length - 1} stop{flight.itineraries[0].segments.length - 1 > 1 ? 's' : ''}</span>
+                        )}
                       </div>
                     </div>
                     
                     {/* Return Flight (if exists) */}
                     {isRoundTrip && (
-                      <div className="flight-details">
-                        <div className="flight-route-label">Return</div>
-                        <div className="flight-route">
-                          <div className="flight-time-info">
-                            <span className="airport-code">{destination}</span>
-                            <span className="flight-time">{returnDeparture}</span>
-                          </div>
-                          <div className="route-line">
-                            <FaPlane className="plane-icon" style={{ transform: 'scaleX(-1)' }} />
-                          </div>
-                          <div className="flight-time-info">
-                            <span className="airport-code">{searchParams.origin}</span>
-                            <span className="flight-time">{returnArrival}</span>
-                          </div>
+                      <div className="flight-details styled-timeline">
+                        <div className="flight-route-label">RETURN</div>
+                        <div className="timeline-row">
+                          {flight.itineraries?.[1]?.segments && (
+                            <>
+                              <div className="timeline-times">
+                                <span className="timeline-time">{formatTime(flight.itineraries[1].segments[0].departure.at)}</span>
+                                <span className="timeline-airport">{flight.itineraries[1].segments[0].departure.iataCode}</span>
+                              </div>
+                              <div className="timeline-bar">
+                                {flight.itineraries[1].segments.map((segment, idx, arr) => (
+                                  <React.Fragment key={idx}>
+                                    {idx > 0 && (
+                                      <div className="timeline-stop">
+                                        <div className="timeline-dot" />
+                                        <div className="timeline-stop-label">{segment.departure.iataCode}</div>
+                                        <div className="timeline-layover">
+                                          {(() => {
+                                            const prevSegment = arr[idx - 1];
+                                            const layoverTime = new Date(segment.departure.at) - new Date(prevSegment.arrival.at);
+                                            const layoverHours = Math.floor(layoverTime / (1000 * 60 * 60));
+                                            const layoverMinutes = Math.floor((layoverTime % (1000 * 60 * 60)) / (1000 * 60));
+                                            return (
+                                              <span className="timeline-layover-time">{layoverHours}h {layoverMinutes}m layover</span>
+                                            );
+                                          })()}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {idx < arr.length - 1 && <div className="timeline-line" />}
+                                  </React.Fragment>
+                                ))}
+                              </div>
+                              <div className="timeline-times">
+                                <span className="timeline-time">{formatTime(flight.itineraries[1].segments[flight.itineraries[1].segments.length-1].arrival.at)}</span>
+                                <span className="timeline-airport">{flight.itineraries[1].segments[flight.itineraries[1].segments.length-1].arrival.iataCode}</span>
+                              </div>
+                            </>
+                          )}
                         </div>
-                        
-                        <div className="flight-meta">
-                          <div className="meta-item">
-                            <FaClock className="meta-icon" />
-                            <span>{returnDuration || 'Duration not available'}</span>
-                          </div>
+                        <div className="flight-meta timeline-meta">
+                          <span className="meta-item"><FaClock className="meta-icon" /> {returnDuration || 'Duration not available'}</span>
+                          {flight.itineraries?.[1]?.segments && flight.itineraries[1].segments.length > 1 && (
+                            <span className="meta-item stops-label">{flight.itineraries[1].segments.length - 1} stop{flight.itineraries[1].segments.length - 1 > 1 ? 's' : ''}</span>
+                          )}
                         </div>
                       </div>
                     )}

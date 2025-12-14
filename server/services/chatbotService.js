@@ -9,8 +9,19 @@ class ChatbotService {
   }
 
   // OpenAI Integration
-  async sendToOpenAI(message, conversationHistory = []) {
+  async sendToOpenAI(message, conversationHistory = [], userInfo = {}) {
     try {
+      // Build system prompt with user information
+      let systemPrompt = 'You are a helpful travel assistant for a flight search engine. Help users with flight searches, visa requirements, travel recommendations, and general travel questions. Be concise, friendly, and informative.';
+      
+      if (userInfo.name) {
+        systemPrompt += ` The user's name is ${userInfo.name}. Address them by name occasionally to create a personalized experience.`;
+      }
+      
+      if (userInfo.citizenship) {
+        systemPrompt += ` The user is a citizen of ${userInfo.citizenship}. When discussing visa requirements, travel advice, or recommendations, take their citizenship into consideration and provide relevant information specific to their nationality.`;
+      }
+      
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
@@ -22,7 +33,7 @@ class ChatbotService {
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful travel assistant for a flight search engine. Help users with flight searches, visa requirements, travel recommendations, and general travel questions. Be concise, friendly, and informative.',
+              content: systemPrompt,
             },
             ...conversationHistory,
             {
@@ -55,7 +66,16 @@ class ChatbotService {
         }
       );
 
-      const parsedResponse = JSON.parse(response.data.choices[0].message.content);
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(response.data.choices[0].message.content);
+      } catch (e) {
+        console.error('OpenAI JSON parse error:', response.data.choices[0].message.content);
+        return {
+          response: "Sorry, I couldn't understand the response from the AI. Please try rephrasing your question or try again.",
+          model: 'gpt-4o-mini',
+        };
+      }
       return {
         response: parsedResponse.message,
         model: 'gpt-4o-mini',
@@ -112,11 +132,11 @@ class ChatbotService {
   }
 
   // Main method to process messages
-  async processMessage(message, sessionId, conversationHistory = []) {
+  async processMessage(message, sessionId, conversationHistory = [], userInfo = {}) {
     try {
       // Use OpenAI if available
       if (process.env.OPENAI_API_KEY) {
-        return await this.sendToOpenAI(message, conversationHistory);
+        return await this.sendToOpenAI(message, conversationHistory, userInfo);
       }
 
       // Fallback to simple responses

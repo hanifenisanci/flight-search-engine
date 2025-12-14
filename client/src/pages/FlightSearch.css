@@ -275,8 +275,16 @@
   font-size: 0.95rem;
   font-weight: 500;
   color: white !important;
-  background-color: rgba(30, 30, 46, 0.6);
+  background-color: rgba(30, 30, 46, 0.95) !important;
   transition: all 0.2s;
+  -webkit-text-fill-color: white !important;
+  caret-color: white;
+}
+
+.flight-search .form-group input,
+.flight-search .form-group select {
+  color: white !important;
+  background-color: rgba(30, 30, 46, 0.95) !important;
   -webkit-text-fill-color: white !important;
 }
 
@@ -285,8 +293,8 @@
 .form-group input:-webkit-autofill:focus,
 .form-group input:-webkit-autofill:active {
   -webkit-text-fill-color: white !important;
-  -webkit-box-shadow: 0 0 0px 1000px rgba(30, 30, 46, 0.6) inset !important;
-  box-shadow: 0 0 0px 1000px rgba(30, 30, 46, 0.6) inset !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(30, 30, 46, 0.95) inset !important;
+  box-shadow: 0 0 0px 1000px rgba(30, 30, 46, 0.95) inset !important;
   color: white !important;
 }
 
@@ -311,11 +319,12 @@
   outline: none;
   border-color: #39E079;
   box-shadow: 0 0 0 3px rgba(57, 224, 121, 0.15);
-  background-color: rgba(30, 30, 46, 0.8);
+  background-color: rgba(30, 30, 46, 0.95) !important;
+  color: white !important;
 }
 
 .form-group input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.4) !important;
 }
 
 .form-group input[type="date"]::-webkit-calendar-picker-indicator,
@@ -1272,4 +1281,108 @@
   .btn-recommendations .btn-text small {
     font-size: 0.7rem;
   }
+}
+
+/* Timeline Styles */
+.styled-timeline {
+  background: none;
+  color: #fff;
+  margin-bottom: 1.5rem;
+}
+.styled-timeline .flight-route-label {
+  color: #2ecc71;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+}
+.timeline-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+}
+.timeline-times {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  font-size: 1.1em;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.timeline-time {
+  font-weight: 700;
+  font-size: 1.1em;
+  color: #fff;
+  margin-bottom: 2px;
+}
+.timeline-airport {
+  font-size: 0.95em;
+  color: #b2becd;
+  font-weight: 500;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+.timeline-bar {
+  display: flex;
+  align-items: flex-end;
+  flex: 1;
+  position: relative;
+  margin: 0 10px;
+  min-height: 60px;
+}
+.timeline-dot {
+  width: 16px;
+  height: 16px;
+  background: #2ecc71;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #222b3a;
+  margin: 0 8px 4px 8px;
+  z-index: 2;
+}
+.timeline-line {
+  height: 4px;
+  background: linear-gradient(90deg, #2ecc71 60%, #fff 100%);
+  flex: 1;
+  margin: 0 2px 0 2px;
+  border-radius: 2px;
+  min-width: 30px;
+  z-index: 1;
+  align-self: center;
+}
+.timeline-stop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  margin: 0 2px;
+  position: relative;
+  top: 8px;
+}
+.timeline-stop-label {
+  font-size: 0.95em;
+  color: #f1c40f;
+  font-weight: 600;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+.timeline-layover {
+  font-size: 0.9em;
+  color: #ff7675;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+.timeline-meta {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+  color: #b2becd;
+}
+.stops-label {
+  color: #f1c40f;
+  font-weight: 600;
+}
+.segment-detail {
+  display: none;
 }

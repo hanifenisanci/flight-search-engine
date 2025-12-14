@@ -30,11 +30,158 @@ exports.searchFlights = async (params) => {
 // Generate mock flight data for development
 const generateMockFlights = (params) => {
   const airlines = ['AA', 'UA', 'DL', 'BA', 'LH', 'AF', 'KL', 'TK'];
+  const hubs = ['IST', 'FRA', 'AMS', 'CDG', 'LHR', 'DXB', 'DOH', 'MUC'];
   const mockFlights = [];
   
   for (let i = 0; i < 10; i++) {
-    const basePrice = 200 + Math.random() * 800;
-    const duration = `PT${Math.floor(2 + Math.random() * 12)}H${Math.floor(Math.random() * 60)}M`;
+    const hasLayover = i % 3 !== 0; // 2 out of 3 flights have layovers
+    const numberOfStops = hasLayover ? (i % 4 === 0 ? 2 : 1) : 0;
+    
+    let segments = [];
+    let currentTime = new Date(`${params.departureDate}T${String(6 + i).padStart(2, '0')}:00:00`);
+    let totalDuration = 0;
+    
+    if (numberOfStops === 0) {
+      // Direct flight
+      const flightDuration = 2 + Math.random() * 4; // 2-6 hours
+      totalDuration = flightDuration;
+      const arrivalTime = new Date(currentTime.getTime() + flightDuration * 60 * 60 * 1000);
+      
+      segments.push({
+        departure: {
+          iataCode: params.origin,
+          at: currentTime.toISOString()
+        },
+        arrival: {
+          iataCode: params.destination,
+          at: arrivalTime.toISOString()
+        },
+        carrierCode: airlines[i % airlines.length],
+        number: String(1000 + i),
+        aircraft: { code: '320' },
+        duration: `PT${Math.floor(flightDuration)}H${Math.floor((flightDuration % 1) * 60)}M`,
+        numberOfStops: 0
+      });
+    } else {
+      // Flight with layovers
+      for (let stop = 0; stop <= numberOfStops; stop++) {
+        const isFirstSegment = stop === 0;
+        const isLastSegment = stop === numberOfStops;
+        
+        const origin = isFirstSegment ? params.origin : hubs[Math.floor(Math.random() * hubs.length)];
+        const destination = isLastSegment ? params.destination : hubs[Math.floor(Math.random() * hubs.length)];
+        
+        const segmentDuration = 1.5 + Math.random() * 3; // 1.5-4.5 hours per segment
+        totalDuration += segmentDuration;
+        
+        const arrivalTime = new Date(currentTime.getTime() + segmentDuration * 60 * 60 * 1000);
+        
+        segments.push({
+          departure: {
+            iataCode: origin,
+            at: currentTime.toISOString()
+          },
+          arrival: {
+            iataCode: destination,
+            at: arrivalTime.toISOString()
+          },
+          carrierCode: airlines[i % airlines.length],
+          number: String(1000 + i + stop),
+          aircraft: { code: '320' },
+          duration: `PT${Math.floor(segmentDuration)}H${Math.floor((segmentDuration % 1) * 60)}M`,
+          numberOfStops: 0
+        });
+        
+        // Add layover time if not the last segment
+        if (!isLastSegment) {
+          const layoverDuration = 1 + Math.random() * 3; // 1-4 hours layover
+          totalDuration += layoverDuration;
+          currentTime = new Date(arrivalTime.getTime() + layoverDuration * 60 * 60 * 1000);
+        }
+      }
+    }
+    
+    const basePrice = 200 + Math.random() * 800 + (numberOfStops * 50); // More stops = slightly cheaper
+    const totalDurationString = `PT${Math.floor(totalDuration)}H${Math.floor((totalDuration % 1) * 60)}M`;
+    
+    // Generate return flight if it's a round trip
+    let itineraries = [{
+      duration: totalDurationString,
+      segments: segments
+    }];
+    
+    if (params.returnDate) {
+      const returnHasLayover = (i + 1) % 3 !== 0;
+      const returnStops = returnHasLayover ? (i % 4 === 0 ? 2 : 1) : 0;
+      let returnSegments = [];
+      let returnCurrentTime = new Date(`${params.returnDate}T${String(10 + i).padStart(2, '0')}:00:00`);
+      let returnTotalDuration = 0;
+      
+      if (returnStops === 0) {
+        // Direct return flight
+        const flightDuration = 2 + Math.random() * 4;
+        returnTotalDuration = flightDuration;
+        const arrivalTime = new Date(returnCurrentTime.getTime() + flightDuration * 60 * 60 * 1000);
+        
+        returnSegments.push({
+          departure: {
+            iataCode: params.destination,
+            at: returnCurrentTime.toISOString()
+          },
+          arrival: {
+            iataCode: params.origin,
+            at: arrivalTime.toISOString()
+          },
+          carrierCode: airlines[i % airlines.length],
+          number: String(2000 + i),
+          aircraft: { code: '320' },
+          duration: `PT${Math.floor(flightDuration)}H${Math.floor((flightDuration % 1) * 60)}M`,
+          numberOfStops: 0
+        });
+      } else {
+        // Return flight with layovers
+        for (let stop = 0; stop <= returnStops; stop++) {
+          const isFirstSegment = stop === 0;
+          const isLastSegment = stop === returnStops;
+          
+          const origin = isFirstSegment ? params.destination : hubs[Math.floor(Math.random() * hubs.length)];
+          const destination = isLastSegment ? params.origin : hubs[Math.floor(Math.random() * hubs.length)];
+          
+          const segmentDuration = 1.5 + Math.random() * 3;
+          returnTotalDuration += segmentDuration;
+          
+          const arrivalTime = new Date(returnCurrentTime.getTime() + segmentDuration * 60 * 60 * 1000);
+          
+          returnSegments.push({
+            departure: {
+              iataCode: origin,
+              at: returnCurrentTime.toISOString()
+            },
+            arrival: {
+              iataCode: destination,
+              at: arrivalTime.toISOString()
+            },
+            carrierCode: airlines[i % airlines.length],
+            number: String(2000 + i + stop),
+            aircraft: { code: '320' },
+            duration: `PT${Math.floor(segmentDuration)}H${Math.floor((segmentDuration % 1) * 60)}M`,
+            numberOfStops: 0
+          });
+          
+          if (!isLastSegment) {
+            const layoverDuration = 1 + Math.random() * 3;
+            returnTotalDuration += layoverDuration;
+            returnCurrentTime = new Date(arrivalTime.getTime() + layoverDuration * 60 * 60 * 1000);
+          }
+        }
+      }
+      
+      const returnDurationString = `PT${Math.floor(returnTotalDuration)}H${Math.floor((returnTotalDuration % 1) * 60)}M`;
+      itineraries.push({
+        duration: returnDurationString,
+        segments: returnSegments
+      });
+    }
     
     mockFlights.push({
       type: 'flight-offer',
@@ -45,24 +192,7 @@ const generateMockFlights = (params) => {
       oneWay: !params.returnDate,
       lastTicketingDate: params.departureDate,
       numberOfBookableSeats: Math.floor(1 + Math.random() * 9),
-      itineraries: [{
-        duration: duration,
-        segments: [{
-          departure: {
-            iataCode: params.origin,
-            at: `${params.departureDate}T${String(6 + i).padStart(2, '0')}:00:00`
-          },
-          arrival: {
-            iataCode: params.destination,
-            at: `${params.departureDate}T${String(10 + i).padStart(2, '0')}:30:00`
-          },
-          carrierCode: airlines[i % airlines.length],
-          number: String(1000 + i),
-          aircraft: { code: '320' },
-          duration: duration,
-          numberOfStops: Math.floor(Math.random() * 2)
-        }]
-      }],
+      itineraries: itineraries,
       price: {
         currency: 'USD',
         total: basePrice.toFixed(2),
@@ -232,6 +362,54 @@ const generateMockLocations = (keyword) => {
     
     // Middle East
     { id: 'DXB', type: 'location', subType: 'AIRPORT', name: 'Dubai International Airport', iataCode: 'DXB', address: { cityName: 'Dubai', countryName: 'United Arab Emirates' } },
+    { id: 'AMM', type: 'location', subType: 'AIRPORT', name: 'Queen Alia International Airport', iataCode: 'AMM', address: { cityName: 'Amman', countryName: 'Jordan' } },
+    { id: 'DOH', type: 'location', subType: 'AIRPORT', name: 'Hamad International Airport', iataCode: 'DOH', address: { cityName: 'Doha', countryName: 'Qatar' } },
+    { id: 'AUH', type: 'location', subType: 'AIRPORT', name: 'Abu Dhabi International Airport', iataCode: 'AUH', address: { cityName: 'Abu Dhabi', countryName: 'United Arab Emirates' } },
+    { id: 'CAI', type: 'location', subType: 'AIRPORT', name: 'Cairo International Airport', iataCode: 'CAI', address: { cityName: 'Cairo', countryName: 'Egypt' } },
+    { id: 'TLV', type: 'location', subType: 'AIRPORT', name: 'Ben Gurion Airport', iataCode: 'TLV', address: { cityName: 'Tel Aviv', countryName: 'Israel' } },
+    { id: 'BEY', type: 'location', subType: 'AIRPORT', name: 'Beirut–Rafic Hariri International Airport', iataCode: 'BEY', address: { cityName: 'Beirut', countryName: 'Lebanon' } },
+    { id: 'RUH', type: 'location', subType: 'AIRPORT', name: 'King Khalid International Airport', iataCode: 'RUH', address: { cityName: 'Riyadh', countryName: 'Saudi Arabia' } },
+    { id: 'JED', type: 'location', subType: 'AIRPORT', name: 'King Abdulaziz International Airport', iataCode: 'JED', address: { cityName: 'Jeddah', countryName: 'Saudi Arabia' } },
+    { id: 'KWI', type: 'location', subType: 'AIRPORT', name: 'Kuwait International Airport', iataCode: 'KWI', address: { cityName: 'Kuwait City', countryName: 'Kuwait' } },
+    { id: 'BAH', type: 'location', subType: 'AIRPORT', name: 'Bahrain International Airport', iataCode: 'BAH', address: { cityName: 'Manama', countryName: 'Bahrain' } },
+    { id: 'MCT', type: 'location', subType: 'AIRPORT', name: 'Muscat International Airport', iataCode: 'MCT', address: { cityName: 'Muscat', countryName: 'Oman' } },
+    
+    // Asia
+    { id: 'SIN', type: 'location', subType: 'AIRPORT', name: 'Singapore Changi Airport', iataCode: 'SIN', address: { cityName: 'Singapore', countryName: 'Singapore' } },
+    { id: 'HKG', type: 'location', subType: 'AIRPORT', name: 'Hong Kong International Airport', iataCode: 'HKG', address: { cityName: 'Hong Kong', countryName: 'Hong Kong' } },
+    { id: 'NRT', type: 'location', subType: 'AIRPORT', name: 'Narita International Airport', iataCode: 'NRT', address: { cityName: 'Tokyo', countryName: 'Japan' } },
+    { id: 'ICN', type: 'location', subType: 'AIRPORT', name: 'Incheon International Airport', iataCode: 'ICN', address: { cityName: 'Seoul', countryName: 'South Korea' } },
+    { id: 'BKK', type: 'location', subType: 'AIRPORT', name: 'Suvarnabhumi Airport', iataCode: 'BKK', address: { cityName: 'Bangkok', countryName: 'Thailand' } },
+    { id: 'KUL', type: 'location', subType: 'AIRPORT', name: 'Kuala Lumpur International Airport', iataCode: 'KUL', address: { cityName: 'Kuala Lumpur', countryName: 'Malaysia' } },
+    { id: 'DEL', type: 'location', subType: 'AIRPORT', name: 'Indira Gandhi International Airport', iataCode: 'DEL', address: { cityName: 'New Delhi', countryName: 'India' } },
+    { id: 'BOM', type: 'location', subType: 'AIRPORT', name: 'Chhatrapati Shivaji Maharaj International Airport', iataCode: 'BOM', address: { cityName: 'Mumbai', countryName: 'India' } },
+    { id: 'PEK', type: 'location', subType: 'AIRPORT', name: 'Beijing Capital International Airport', iataCode: 'PEK', address: { cityName: 'Beijing', countryName: 'China' } },
+    { id: 'PVG', type: 'location', subType: 'AIRPORT', name: 'Shanghai Pudong International Airport', iataCode: 'PVG', address: { cityName: 'Shanghai', countryName: 'China' } },
+    
+    // Africa
+    { id: 'JNB', type: 'location', subType: 'AIRPORT', name: 'O.R. Tambo International Airport', iataCode: 'JNB', address: { cityName: 'Johannesburg', countryName: 'South Africa' } },
+    { id: 'CPT', type: 'location', subType: 'AIRPORT', name: 'Cape Town International Airport', iataCode: 'CPT', address: { cityName: 'Cape Town', countryName: 'South Africa' } },
+    { id: 'ADD', type: 'location', subType: 'AIRPORT', name: 'Addis Ababa Bole International Airport', iataCode: 'ADD', address: { cityName: 'Addis Ababa', countryName: 'Ethiopia' } },
+    { id: 'NBO', type: 'location', subType: 'AIRPORT', name: 'Jomo Kenyatta International Airport', iataCode: 'NBO', address: { cityName: 'Nairobi', countryName: 'Kenya' } },
+    { id: 'LOS', type: 'location', subType: 'AIRPORT', name: 'Murtala Muhammed International Airport', iataCode: 'LOS', address: { cityName: 'Lagos', countryName: 'Nigeria' } },
+    { id: 'CMN', type: 'location', subType: 'AIRPORT', name: 'Mohammed V International Airport', iataCode: 'CMN', address: { cityName: 'Casablanca', countryName: 'Morocco' } },
+    
+    // Australia & Oceania
+    { id: 'SYD', type: 'location', subType: 'AIRPORT', name: 'Sydney Kingsford Smith Airport', iataCode: 'SYD', address: { cityName: 'Sydney', countryName: 'Australia' } },
+    { id: 'MEL', type: 'location', subType: 'AIRPORT', name: 'Melbourne Airport', iataCode: 'MEL', address: { cityName: 'Melbourne', countryName: 'Australia' } },
+    { id: 'AKL', type: 'location', subType: 'AIRPORT', name: 'Auckland Airport', iataCode: 'AKL', address: { cityName: 'Auckland', countryName: 'New Zealand' } },
+    
+    // South America
+    { id: 'GRU', type: 'location', subType: 'AIRPORT', name: 'São Paulo/Guarulhos International Airport', iataCode: 'GRU', address: { cityName: 'São Paulo', countryName: 'Brazil' } },
+    { id: 'GIG', type: 'location', subType: 'AIRPORT', name: 'Rio de Janeiro/Galeão International Airport', iataCode: 'GIG', address: { cityName: 'Rio de Janeiro', countryName: 'Brazil' } },
+    { id: 'EZE', type: 'location', subType: 'AIRPORT', name: 'Ministro Pistarini International Airport', iataCode: 'EZE', address: { cityName: 'Buenos Aires', countryName: 'Argentina' } },
+    { id: 'BOG', type: 'location', subType: 'AIRPORT', name: 'El Dorado International Airport', iataCode: 'BOG', address: { cityName: 'Bogotá', countryName: 'Colombia' } },
+    { id: 'LIM', type: 'location', subType: 'AIRPORT', name: 'Jorge Chávez International Airport', iataCode: 'LIM', address: { cityName: 'Lima', countryName: 'Peru' } },
+    
+    // Canada
+    { id: 'YYZ', type: 'location', subType: 'AIRPORT', name: 'Toronto Pearson International Airport', iataCode: 'YYZ', address: { cityName: 'Toronto', countryName: 'Canada' } },
+    { id: 'YVR', type: 'location', subType: 'AIRPORT', name: 'Vancouver International Airport', iataCode: 'YVR', address: { cityName: 'Vancouver', countryName: 'Canada' } },
+    { id: 'YUL', type: 'location', subType: 'AIRPORT', name: 'Montréal-Pierre Elliott Trudeau International Airport', iataCode: 'YUL', address: { cityName: 'Montreal', countryName: 'Canada' } },
   ];
   
   // Search through all airports

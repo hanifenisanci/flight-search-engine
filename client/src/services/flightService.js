@@ -97,8 +97,8 @@ export const paymentService = {
 };
 
 export const chatbotService = {
-  sendMessage: async (message) => {
-    const response = await api.post('/chatbot/message', { message });
+  sendMessage: async (message, userInfo = {}) => {
+    const response = await api.post('/chatbot/message', { message, userInfo });
     return response.data;
   },
 
