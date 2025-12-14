@@ -76,6 +76,9 @@ const UserSchema = new mongoose.Schema({
   stripeSubscriptionId: {
     type: String,
   },
+  subscriptionStartDate: {
+    type: Date,
+  },
   subscriptionEndDate: {
     type: Date,
   },

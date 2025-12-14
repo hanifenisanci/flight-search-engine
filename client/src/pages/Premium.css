@@ -101,21 +101,80 @@
 .subscription-info h2 {
   margin-bottom: 20px;
   color: white;
+  text-align: center;
+  font-size: 1.8rem;
 }
 
 .info-grid {
   display: grid;
   gap: 15px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 }
 
 .info-item {
   display: flex;
   justify-content: space-between;
-  padding: 15px;
+  align-items: center;
+  padding: 15px 20px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item strong {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.info-item span {
+  font-size: 0.95rem;
+}
+
+.benefits-section {
+  margin-top: 30px;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.benefits-section h3 {
+  color: white;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 10px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.benefit-item::before {
+  content: '✓';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #667eea;
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
 .features-section {
@@ -220,4 +279,42 @@
   .comparison-table {
     overflow-x: auto;
   }
+}
+
+.cancellation-notice {
+  background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 30px;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.cancellation-notice strong {
+  display: block;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.cancellation-notice p {
+  margin: 0;
+  opacity: 0.95;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-success {
+  background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+  color: white;
+}
+
+.badge-warning {
+  background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+  color: white;
 }

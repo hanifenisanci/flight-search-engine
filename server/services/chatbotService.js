@@ -3,61 +3,26 @@ const axios = require('axios');
 // This is a simplified chatbot service
 // You can integrate with Dialogflow, OpenAI, or any other chatbot service
 
-// Option 1: Dialogflow Integration
-const dialogflow = require('@google-cloud/dialogflow');
-
 class ChatbotService {
   constructor() {
-    // Initialize Dialogflow client if credentials are available
-    if (process.env.DIALOGFLOW_PROJECT_ID && process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      this.sessionClient = new dialogflow.SessionsClient();
-      this.projectId = process.env.DIALOGFLOW_PROJECT_ID;
-    }
+    // We're using OpenAI only - no Dialogflow
   }
 
-  // Send message to Dialogflow
-  async sendToDialogflow(message, sessionId) {
-    try {
-      const sessionPath = this.sessionClient.projectAgentSessionPath(
-        this.projectId,
-        sessionId
-      );
-
-      const request = {
-        session: sessionPath,
-        queryInput: {
-          text: {
-            text: message,
-            languageCode: 'en-US',
-          },
-        },
-      };
-
-      const responses = await this.sessionClient.detectIntent(request);
-      const result = responses[0].queryResult;
-
-      return {
-        response: result.fulfillmentText,
-        intent: result.intent.displayName,
-        confidence: result.intentDetectionConfidence,
-      };
-    } catch (error) {
-      console.error('Dialogflow Error:', error);
-      throw error;
-    }
-  }
-
-  // Option 2: OpenAI Integration (Alternative)
+  // OpenAI Integration
   async sendToOpenAI(message, conversationHistory = []) {
     try {
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
           model: 'gpt-4o-mini',
+          store: true,
+          metadata: {
+            prompt_id: 'pmpt_693d9ea5434c81959745ed3d19f4cf1b082c7cfe84be9c9f'
+          },
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful travel assistant for a flight search engine. Help users with flight searches, visa requirements, travel recommendations, and general travel questions.',
+              content: 'You are a helpful travel assistant for a flight search engine. Help users with flight searches, visa requirements, travel recommendations, and general travel questions. Be concise, friendly, and informative.',
             },
             ...conversationHistory,
             {
@@ -65,7 +30,21 @@ class ChatbotService {
               content: message,
             },
           ],
-          max_tokens: 150,
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "chat_response",
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string" }
+                },
+                required: ["message"],
+                additionalProperties: false
+              }
+            }
+          },
+          max_tokens: 100,
           temperature: 0.7,
         },
         {
@@ -76,12 +55,13 @@ class ChatbotService {
         }
       );
 
+      const parsedResponse = JSON.parse(response.data.choices[0].message.content);
       return {
-        response: response.data.choices[0].message.content,
+        response: parsedResponse.message,
         model: 'gpt-4o-mini',
       };
     } catch (error) {
-      console.error('OpenAI Error:', error);
+      console.error('OpenAI Error:', error.response?.data || error.message);
       throw error;
     }
   }
@@ -134,12 +114,7 @@ class ChatbotService {
   // Main method to process messages
   async processMessage(message, sessionId, conversationHistory = []) {
     try {
-      // Try Dialogflow first
-      if (this.sessionClient) {
-        return await this.sendToDialogflow(message, sessionId);
-      }
-
-      // Try OpenAI if available
+      // Use OpenAI if available
       if (process.env.OPENAI_API_KEY) {
         return await this.sendToOpenAI(message, conversationHistory);
       }

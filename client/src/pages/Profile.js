@@ -4,6 +4,7 @@ import { userService, flightService } from '../services/flightService';
 import { toast } from 'react-toastify';
 import { FaUser, FaPassport, FaPlus, FaTrash, FaPlane, FaClock, FaMoneyBillWave } from 'react-icons/fa';
 import Footer from '../components/Footer';
+import { TableSkeleton } from '../components/LoadingSkeleton';
 import './Profile.css';
 
 // Common countries list
@@ -89,7 +90,13 @@ const Profile = () => {
       });
       setVisas(userData.visas || []);
     } catch (error) {
-      toast.error('Failed to load profile');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load profile:', error);
+      }
+      // Don't show error toast if it's just a loading issue
+      if (error.response?.status !== 401) {
+        toast.error('Failed to load profile');
+      }
     }
   };
 
@@ -99,7 +106,9 @@ const Profile = () => {
       const response = await flightService.getSavedFlights();
       setSavedFlights(response.data || []);
     } catch (error) {
-      console.error('Failed to load saved flights:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load saved flights:', error);
+      }
     } finally {
       setLoadingFlights(false);
     }
@@ -349,7 +358,7 @@ const Profile = () => {
 
         <div className="saved-flights-list">
           {loadingFlights ? (
-            <p className="loading-text">Loading saved flights...</p>
+            <TableSkeleton rows={3} columns={3} />
           ) : savedFlights.length === 0 ? (
             <p className="no-items">
               No saved flights yet. Search for flights and save your favorites to see them here!

@@ -93,6 +93,8 @@ body {
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
+  color: #333;
+  background: white;
 }
 
 .form-group input:focus,

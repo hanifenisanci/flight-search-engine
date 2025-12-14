@@ -56,6 +56,27 @@ const FlightSchema = new mongoose.Schema({
     type: String,
     default: 'amadeus',
   },
+  isRoundTrip: {
+    type: Boolean,
+    default: false,
+  },
+  itineraries: [{
+    duration: String,
+    segments: [{
+      departure: {
+        iataCode: String,
+        at: String
+      },
+      arrival: {
+        iataCode: String,
+        at: String
+      },
+      carrierCode: String,
+      number: String,
+      aircraft: String,
+      numberOfStops: Number
+    }]
+  }],
   createdAt: {
     type: Date,
     default: Date.now,

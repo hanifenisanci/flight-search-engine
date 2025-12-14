@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaPlane, FaUser, FaCrown, FaBlog, FaNewspaper, FaChevronDown } from 'react-icons/fa';
+import { FaPlane, FaUser, FaCrown, FaBlog, FaChevronDown } from 'react-icons/fa';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -24,7 +24,13 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          <img src="/withpass-logo.png" alt="WithPass" className="navbar-logo-img" />
+          <div className="logo-circle">
+            <FaPlane className="logo-icon" />
+          </div>
+          <div className="logo-text">
+            <div className="logo-title">WITHPASS</div>
+            <div className="logo-subtitle">VISA FREE TRAVEL</div>
+          </div>
         </Link>
 
         <ul className="navbar-menu">
@@ -33,11 +39,6 @@ const Navbar = () => {
               <li>
                 <Link to="/search" className="navbar-link">
                   <FaPlane /> Flight Search
-                </Link>
-              </li>
-              <li>
-                <Link to="/news" className="navbar-link">
-                  <FaNewspaper /> News
                 </Link>
               </li>
               <li>
@@ -64,9 +65,9 @@ const Navbar = () => {
                       </Link>
                     )}
                     {user?.isPremium && (
-                      <div className="dropdown-item premium-badge-item">
+                      <Link to="/premium" className="dropdown-item premium-badge-item" onClick={() => setDropdownOpen(false)}>
                         <FaCrown /> Premium Member
-                      </div>
+                      </Link>
                     )}
                     <button type="button" onClick={() => { logout(); setDropdownOpen(false); }} className="dropdown-item logout-item">
                       Logout
@@ -80,11 +81,6 @@ const Navbar = () => {
               <li>
                 <Link to="/search" className="navbar-link">
                   <FaPlane /> Flight Search
-                </Link>
-              </li>
-              <li>
-                <Link to="/news" className="navbar-link">
-                  <FaNewspaper /> News
                 </Link>
               </li>
               <li>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaSearch, FaCalendar, FaExternalLinkAlt } from 'react-icons/fa';
 import Footer from '../components/Footer';
+import { NewsCardSkeleton, ArticleCardSkeleton } from '../components/LoadingSkeleton';
 import './News.css';
 
 const News = () => {
@@ -39,16 +40,19 @@ const News = () => {
       );
       
       const data = await response.json();
-      console.log('API Response:', data);
       
       if (data.data && data.data.length > 0) {
         setArticles(data.data);
         setFilteredArticles(data.data);
       } else {
-        console.log('No articles found in API response');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('No articles found in API response');
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch news:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to fetch news:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -82,7 +86,14 @@ const News = () => {
 
         <div className="news-content">
           {loading ? (
-            <div className="loading">Loading articles...</div>
+            <div className="articles-grid">
+              <NewsCardSkeleton />
+              <div className="articles-list">
+                {Array(6).fill(0).map((_, index) => (
+                  <ArticleCardSkeleton key={index} />
+                ))}
+              </div>
+            </div>
           ) : filteredArticles.length === 0 ? (
             <div className="no-results">No articles found</div>
           ) : (

@@ -31,8 +31,13 @@ export const AuthProvider = ({ children }) => {
       const res = await axios.get(`${process.env.REACT_APP_API_URL}/auth/me`);
       setUser(res.data.data);
     } catch (error) {
-      console.error('Load user error:', error);
-      logout();
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Load user error:', error);
+      }
+      // Only logout if it's an authentication error (401)
+      if (error.response?.status === 401) {
+        logout();
+      }
     } finally {
       setLoading(false);
     }

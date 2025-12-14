@@ -30,12 +30,12 @@ exports.createSubscription = async (req, res) => {
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: 'huf',
             product_data: {
               name: 'Premium Membership',
-              description: 'Access to premium features including advanced search, price alerts, and priority support',
+              description: 'Unlimited AI Chatbot Usage',
             },
-            unit_amount: 999, // $9.99 per month
+            unit_amount: 100000, // 1000 HUF per month (amount in cents/smallest currency unit)
             recurring: {
               interval: 'month',
             },
@@ -79,6 +79,11 @@ exports.verifySubscription = async (req, res) => {
       user.isPremium = true;
       user.stripeSubscriptionId = session.subscription;
       
+      // Set subscription start date if not already set
+      if (!user.subscriptionStartDate) {
+        user.subscriptionStartDate = new Date();
+      }
+      
       // Set subscription end date to 1 month from now
       const endDate = new Date();
       endDate.setMonth(endDate.getMonth() + 1);
@@ -105,6 +110,41 @@ exports.verifySubscription = async (req, res) => {
   }
 };
 
+// @desc    Reactivate subscription
+// @route   POST /api/payments/reactivate-subscription
+// @access  Private
+exports.reactivateSubscription = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user.stripeSubscriptionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'No subscription found to reactivate',
+      });
+    }
+
+    // Remove cancel_at_period_end flag to resume subscription
+    const subscription = await stripe.subscriptions.update(
+      user.stripeSubscriptionId,
+      { cancel_at_period_end: false }
+    );
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Subscription reactivated successfully',
+      nextBillingDate: new Date(subscription.current_period_end * 1000),
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Cancel subscription
 // @route   POST /api/payments/cancel-subscription
 // @access  Private
@@ -119,17 +159,21 @@ exports.cancelSubscription = async (req, res) => {
       });
     }
 
-    await stripe.subscriptions.cancel(user.stripeSubscriptionId);
+    // Cancel at period end instead of immediately
+    const subscription = await stripe.subscriptions.update(
+      user.stripeSubscriptionId,
+      { cancel_at_period_end: true }
+    );
 
-    user.isPremium = false;
-    user.stripeSubscriptionId = null;
-    user.subscriptionEndDate = null;
+    // Keep isPremium true until the period ends
+    // The webhook will handle setting isPremium to false when subscription actually ends
 
     await user.save();
 
     res.json({
       success: true,
-      message: 'Subscription cancelled successfully',
+      message: 'Subscription will be cancelled at the end of the billing period',
+      cancelAt: new Date(subscription.current_period_end * 1000),
     });
   } catch (error) {
     res.status(500).json({
@@ -167,6 +211,8 @@ exports.getSubscriptionStatus = async (req, res) => {
         status: subscription.status,
         currentPeriodEnd: new Date(subscription.current_period_end * 1000),
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        subscriptionStartDate: user.subscriptionStartDate,
+        cancelAt: subscription.cancel_at_period_end ? new Date(subscription.current_period_end * 1000) : null,
       },
     });
   } catch (error) {

@@ -82,6 +82,10 @@
   padding: 12px 16px;
   border-radius: 16px;
   word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  overflow: visible;
+  word-break: break-word;
 }
 
 .message.user .message-content {

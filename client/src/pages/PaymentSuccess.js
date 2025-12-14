@@ -26,7 +26,9 @@ const PaymentSuccess = () => {
       updateUser(response.data);
       setVerifying(false);
     } catch (error) {
-      console.error('Payment verification failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Payment verification failed:', error);
+      }
       setVerifying(false);
     }
   };

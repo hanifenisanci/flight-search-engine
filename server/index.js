@@ -8,6 +8,38 @@ const session = require('express-session');
 // Load env vars
 dotenv.config();
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'JWT_SECRET',
+  'MONGODB_URI',
+  'CLIENT_URL'
+];
+
+const optionalEnvVars = [
+  'STRIPE_SECRET_KEY',
+  'AMADEUS_API_KEY',
+  'AMADEUS_API_SECRET',
+  'OPENAI_API_KEY'
+];
+
+const missingRequired = requiredEnvVars.filter(varName => !process.env[varName]);
+const missingOptional = optionalEnvVars.filter(varName => !process.env[varName]);
+
+if (missingRequired.length > 0) {
+  console.error('❌ Missing required environment variables:');
+  missingRequired.forEach(varName => console.error(`   - ${varName}`));
+  console.error('\nPlease create a .env file based on .env.example');
+  process.exit(1);
+}
+
+if (missingOptional.length > 0) {
+  console.warn('⚠️  Missing optional environment variables (some features may be limited):');
+  missingOptional.forEach(varName => console.warn(`   - ${varName}`));
+  console.warn('');
+}
+
+console.log('✅ Environment variables validated');
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -15,7 +47,16 @@ const flightRoutes = require('./routes/flights');
 const paymentRoutes = require('./routes/payments');
 const chatbotRoutes = require('./routes/chatbot');
 
+// Import rate limiters
+const { generalLimiter } = require('./middleware/rateLimiter');
+
 const app = express();
+
+// Trust proxy for rate limiting (needed when behind reverse proxies)
+app.set('trust proxy', 1);
+
+// Apply general rate limiter to all requests
+app.use(generalLimiter);
 
 // Middleware
 app.use(cors({

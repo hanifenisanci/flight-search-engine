@@ -6,36 +6,30 @@ import { Link } from 'react-router-dom';
 import './Chatbot.css';
 
 const Chatbot = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+  const [messageCount, setMessageCount] = useState(0);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      if (!isAuthenticated) {
-        // Show login message for non-authenticated users
-        setMessages([
-          {
-            type: 'bot',
-            text: 'Please log in to talk to me!',
-            timestamp: new Date(),
-          },
-        ]);
-      } else {
-        loadSuggestions();
-        // Add welcome message for authenticated users
-        setMessages([
-          {
-            type: 'bot',
-            text: 'Hello! I\'m your travel assistant. How can I help you today?',
-            timestamp: new Date(),
-          },
-        ]);
-      }
+      loadSuggestions();
+      // Add welcome message
+      const welcomeText = isAuthenticated 
+        ? 'Hello! I\'m your travel assistant. How can I help you today?' 
+        : 'Hello! I\'m your travel assistant. How can I help you today?';
+      
+      setMessages([
+        {
+          type: 'bot',
+          text: welcomeText,
+          timestamp: new Date(),
+        },
+      ]);
     }
   }, [isOpen, isAuthenticated]);
 
@@ -52,17 +46,14 @@ const Chatbot = () => {
       const response = await chatbotService.getSuggestions();
       setSuggestions(response.data);
     } catch (error) {
-      console.error('Failed to load suggestions:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load suggestions:', error);
+      }
     }
   };
 
   const handleSend = async (message = input) => {
     if (!message.trim()) return;
-    
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      return;
-    }
 
     // Add user message
     const userMessage = {
@@ -76,6 +67,7 @@ const Chatbot = () => {
 
     try {
       const response = await chatbotService.sendMessage(message);
+      setMessageCount(prev => prev + 1);
       const botMessage = {
         type: 'bot',
         text: response.data.botResponse,
@@ -83,9 +75,36 @@ const Chatbot = () => {
       };
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
+      let errorText = error.response?.data?.error || 'Sorry, I encountered an error. Please try again.';
+      
+      // Add helpful links for rate limit errors
+      if (error.response?.status === 429) {
+        const isPremium = user?.isPremium;
+        if (!isAuthenticated) {
+          const botMessage = {
+            type: 'bot',
+            text: (
+              <span>
+                You've used your 3 free messages! Please <Link to="/login" style={{color: '#6c63ff', textDecoration: 'underline', fontWeight: 'bold'}}>log in</Link> to get 5 more messages, or <Link to="/premium" style={{color: '#6c63ff', textDecoration: 'underline', fontWeight: 'bold'}}>upgrade to premium</Link> for unlimited access.
+              </span>
+            ),
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, botMessage]);
+          setLoading(false);
+          return;
+        } else if (!isPremium) {
+          errorText = (
+            <span>
+              You've reached your limit! <Link to="/premium" style={{color: '#6c63ff', textDecoration: 'underline', fontWeight: 'bold'}}>Upgrade to premium</Link> for unlimited chatbot access.
+            </span>
+          );
+        }
+      }
+      
       const errorMessage = {
         type: 'bot',
-        text: 'Sorry, I encountered an error. Please try again.',
+        text: errorText,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -108,6 +127,19 @@ const Chatbot = () => {
     e.preventDefault();
     e.stopPropagation();
     setIsOpen(false);
+  };
+
+  // Format message text to render bold text (**text**)
+  const formatMessage = (text) => {
+    if (typeof text !== 'string') return text;
+    
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={index}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
   };
 
   return (
@@ -135,7 +167,7 @@ const Chatbot = () => {
           <div className="chatbot-messages">
             {messages.map((msg, index) => (
               <div key={index} className={`message ${msg.type}`}>
-                <div className="message-content">{msg.text}</div>
+                <div className="message-content">{formatMessage(msg.text)}</div>
                 <div className="message-time">
                   {new Date(msg.timestamp).toLocaleTimeString([], {
                     hour: '2-digit',
@@ -171,32 +203,24 @@ const Chatbot = () => {
             </div>
           )}
 
-          {!isAuthenticated ? (
-            <div className="chatbot-login-prompt">
-              <Link to="/login" className="btn btn-primary btn-block">
-                Login to Chat
-              </Link>
-            </div>
-          ) : (
-            <div className="chatbot-input">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Type your message..."
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={() => handleSend()}
-                disabled={loading || !input.trim()}
-                className="send-btn"
-              >
-                <FaPaperPlane />
-              </button>
-            </div>
-          )}
+          <div className="chatbot-input">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Type your message..."
+              disabled={loading}
+            />
+            <button
+              type="button"
+              onClick={() => handleSend()}
+              disabled={loading || !input.trim()}
+              className="send-btn"
+            >
+              <FaPaperPlane />
+            </button>
+          </div>
         </div>
       )}
     </div>

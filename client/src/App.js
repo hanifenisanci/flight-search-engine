@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // Components
 import Navbar from './components/Navbar';
 import Chatbot from './components/Chatbot';
+import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -16,7 +17,6 @@ import Premium from './pages/Premium';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
 import Blog from './pages/Blog';
-import News from './pages/News';
 
 import './App.css';
 
@@ -33,57 +33,58 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="App">
-          <Navbar />
-          <div className="container">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/search" element={<FlightSearch />} />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/news" element={<News />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route
-                path="/premium"
-                element={
-                  <ProtectedRoute>
-                    <Premium />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/payment/success"
-                element={
-                  <ProtectedRoute>
-                    <PaymentSuccess />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/payment/cancel"
-                element={
-                  <ProtectedRoute>
-                    <PaymentCancel />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <div className="App">
+            <Navbar />
+            <div className="container">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/search" element={<FlightSearch />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/blog" element={<Blog />} />
+                <Route
+                  path="/premium"
+                  element={
+                    <ProtectedRoute>
+                      <Premium />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/payment/success"
+                  element={
+                    <ProtectedRoute>
+                      <PaymentSuccess />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/payment/cancel"
+                  element={
+                    <ProtectedRoute>
+                      <PaymentCancel />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </div>
+            <Chatbot />
+            <ToastContainer position="top-right" autoClose={3000} />
           </div>
-          <Chatbot />
-          <ToastContainer position="top-right" autoClose={3000} />
-        </div>
-      </Router>
-    </AuthProvider>
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

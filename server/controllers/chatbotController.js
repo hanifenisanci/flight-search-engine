@@ -6,11 +6,11 @@ const conversationSessions = new Map();
 
 // @desc    Send message to chatbot
 // @route   POST /api/chatbot/message
-// @access  Private
+// @access  Public (but with tiered rate limits)
 exports.sendMessage = async (req, res) => {
   try {
     const { message } = req.body;
-    const userId = req.user.id;
+    const userId = req.user?.id || req.ip; // Use IP for guests
 
     if (!message) {
       return res.status(400).json({
@@ -41,6 +41,8 @@ exports.sendMessage = async (req, res) => {
         intent: response.intent || null,
         confidence: response.confidence || null,
         timestamp: new Date(),
+        isGuest: !req.user,
+        isPremium: req.user?.isPremium || false,
       },
     });
   } catch (error) {
@@ -78,10 +80,10 @@ exports.getSuggestions = async (req, res) => {
 
 // @desc    Clear conversation history
 // @route   DELETE /api/chatbot/session
-// @access  Private
+// @access  Public
 exports.clearSession = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id || req.ip;
     conversationSessions.delete(userId);
 
     res.json({

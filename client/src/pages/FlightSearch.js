@@ -2,13 +2,26 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { flightService } from '../services/flightService';
 import { toast } from 'react-toastify';
-import { FaPlane, FaCalendar, FaUsers, FaSearch, FaUserCircle } from 'react-icons/fa';
+import { FaPlane, FaCalendar, FaUsers, FaSearch, FaUserCircle, FaClock, FaExternalLinkAlt } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
+import { FlightCardSkeleton } from '../components/LoadingSkeleton';
+import { getAirlineName, getAirlineBookingUrl, getAirlineLogoUrl, formatDuration } from '../utils/airlineNames';
 import './FlightSearch.css';
 
 const FlightSearch = () => {
   const { isAuthenticated } = useAuth();
+  
+  // Helper function to format time from ISO string
+  const formatTime = (isoString) => {
+    if (!isoString) return 'N/A';
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false 
+    });
+  };
   const [searchParams, setSearchParams] = useState({
     origin: '',
     destination: '',
@@ -21,8 +34,11 @@ const FlightSearch = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [visaFreeOnly, setVisaFreeOnly] = useState(false);
+  const [searchAnywhere, setSearchAnywhere] = useState(false);
   const [activeTab, setActiveTab] = useState('search');
   const [oneWay, setOneWay] = useState(false);
+  const [sortBy, setSortBy] = useState('price');
+  const [sortOrder, setSortOrder] = useState('asc');
   const [originSuggestions, setOriginSuggestions] = useState([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState([]);
   const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
@@ -41,15 +57,12 @@ const FlightSearch = () => {
     setLoadingSuggestions(true);
     try {
       const response = await flightService.searchLocations(keyword);
-      console.log('Location search response:', response);
       
       // Handle response structure - response.data might be nested
       const locations = response.data || response || [];
       const airports = (Array.isArray(locations) ? locations : []).filter(loc => 
         loc.subType === 'AIRPORT' || loc.subType === 'CITY'
       ).slice(0, 10);
-      
-      console.log('Filtered airports:', airports);
       
       if (field === 'origin') {
         setOriginSuggestions(airports);
@@ -59,7 +72,9 @@ const FlightSearch = () => {
         setShowDestinationSuggestions(airports.length > 0);
       }
     } catch (error) {
-      console.error('Failed to search airports:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to search airports:', error);
+      }
       if (field === 'origin') {
         setOriginSuggestions([]);
         setShowOriginSuggestions(false);
@@ -86,6 +101,8 @@ const FlightSearch = () => {
         searchAirports(value, 'origin');
       }, 300);
     } else if (name === 'destination') {
+      // Reset anywhere mode when user starts typing
+      if (searchAnywhere) setSearchAnywhere(false);
       if (destinationTimeoutRef.current) clearTimeout(destinationTimeoutRef.current);
       destinationTimeoutRef.current = setTimeout(() => {
         searchAirports(value, 'destination');
@@ -104,6 +121,7 @@ const FlightSearch = () => {
     } else {
       setShowDestinationSuggestions(false);
       setDestinationSuggestions([]);
+      setSearchAnywhere(false); // Reset anywhere mode when selecting specific destination
     }
   };
 
@@ -122,12 +140,67 @@ const FlightSearch = () => {
     setLoading(true);
 
     try {
-      const response = await flightService.searchFlights(searchParams);
-      setFlights(response.data);
-      toast.success(`Found ${response.count} flights`);
+      // If visa-free mode is enabled
+      if (visaFreeOnly && isAuthenticated) {
+        if (!searchParams.origin) {
+          toast.warning('Please enter origin airport');
+          setLoading(false);
+          return;
+        }
+        
+        toast.info('Searching visa-free destinations...', { autoClose: 2000 });
+        
+        const response = await flightService.getVisaFreeDestinations(searchParams);
+        setFlights(response.data);
+        setActiveTab('search');
+        toast.success(`Found ${response.count} cheapest visa-free destinations for you!`);
+      }
+      // If "Anywhere" mode is enabled
+      else if (searchAnywhere) {
+        if (!searchParams.origin) {
+          toast.warning('Please enter origin airport');
+          setLoading(false);
+          return;
+        }
+        
+        // Popular destination airport codes
+        const popularDestinations = ['JFK', 'CDG', 'DXB', 'LHR', 'NRT', 'SIN', 'BCN', 'FCO', 'AMS', 'IST'];
+        const allFlights = [];
+        
+        // Search flights to multiple destinations
+        for (const dest of popularDestinations) {
+          try {
+            const response = await flightService.searchFlights({
+              ...searchParams,
+              destination: dest
+            });
+            if (response.data && response.data.length > 0) {
+              // Take top 2 cheapest from each destination
+              const cheapestFlights = response.data
+                .sort((a, b) => parseFloat(a.price?.total || 999999) - parseFloat(b.price?.total || 999999))
+                .slice(0, 2);
+              allFlights.push(...cheapestFlights);
+            }
+          } catch (err) {
+            // Skip destinations that fail
+            console.log(`Failed to search ${dest}:`, err.message);
+          }
+        }
+        
+        setFlights(allFlights);
+        setActiveTab('search');
+        toast.success(`Found ${allFlights.length} flights to various destinations`);
+      } else {
+        const response = await flightService.searchFlights(searchParams);
+        setFlights(response.data);
+        setActiveTab('search');
+        toast.success(`Found ${response.count} flights`);
+      }
     } catch (error) {
       toast.error('Failed to search flights. Please try again.');
-      console.error(error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
     } finally {
       setLoading(false);
     }
@@ -147,7 +220,9 @@ const FlightSearch = () => {
       toast.success('Recommendations loaded!');
     } catch (error) {
       toast.error('Failed to load recommendations');
-      console.error(error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
     } finally {
       setLoading(false);
     }
@@ -155,6 +230,9 @@ const FlightSearch = () => {
 
   const saveFlight = async (flight) => {
     try {
+      // Check if it's a round trip
+      const isRoundTrip = flight.itineraries?.length > 1;
+      
       // Structure the flight data for saving
       const flightData = {
         origin: searchParams.origin,
@@ -172,14 +250,74 @@ const FlightSearch = () => {
         class: searchParams.travelClass?.toLowerCase() || 'economy',
         availableSeats: flight.numberOfBookableSeats || null,
         externalId: flight.id,
-        provider: 'amadeus'
+        provider: 'amadeus',
+        // Add complete itinerary information
+        itineraries: flight.itineraries?.map(itinerary => ({
+          duration: itinerary.duration,
+          segments: itinerary.segments?.map(segment => ({
+            departure: {
+              iataCode: segment.departure?.iataCode,
+              at: segment.departure?.at
+            },
+            arrival: {
+              iataCode: segment.arrival?.iataCode,
+              at: segment.arrival?.at
+            },
+            carrierCode: segment.carrierCode,
+            number: segment.number,
+            aircraft: segment.aircraft?.code,
+            numberOfStops: segment.numberOfStops
+          }))
+        })),
+        isRoundTrip
       };
       
       await flightService.saveFlight(flightData);
-      toast.success('Flight saved to favorites!');
+      toast.success(isRoundTrip ? 'Round-trip flight saved to favorites!' : 'Flight saved to favorites!');
     } catch (error) {
-      console.error('Save flight error:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Save flight error:', error);
+      }
       toast.error(error.response?.data?.error || 'Failed to save flight. Please try again.');
+    }
+  };
+
+  // Parse duration string (e.g., "PT5H30M") to minutes
+  const parseDuration = (duration) => {
+    if (!duration) return 0;
+    const hours = duration.match(/(\ d+)H/);
+    const minutes = duration.match(/(\d+)M/);
+    return (hours ? parseInt(hours[1]) * 60 : 0) + (minutes ? parseInt(minutes[1]) : 0);
+  };
+
+  // Sort flights based on selected criteria
+  const getSortedFlights = (flightsList) => {
+    if (sortBy === 'none') return flightsList;
+
+    const sorted = [...flightsList].sort((a, b) => {
+      if (sortBy === 'price') {
+        const priceA = parseFloat(a.price?.total || 0);
+        const priceB = parseFloat(b.price?.total || 0);
+        return sortOrder === 'asc' ? priceA - priceB : priceB - priceA;
+      } else if (sortBy === 'duration') {
+        const durationA = parseDuration(a.itineraries?.[0]?.duration);
+        const durationB = parseDuration(b.itineraries?.[0]?.duration);
+        return sortOrder === 'asc' ? durationA - durationB : durationB - durationA;
+      }
+      return 0;
+    });
+
+    return sorted;
+  };
+
+  const handleSortChange = (e) => {
+    const value = e.target.value;
+    if (value === 'none') {
+      setSortBy('none');
+    } else {
+      const [criteria, order] = value.split('-');
+      setSortBy(criteria);
+      setSortOrder(order);
     }
   };
 
@@ -261,34 +399,63 @@ const FlightSearch = () => {
                   type="text"
                   id="destination"
                   name="destination"
-                  value={visaFreeOnly ? 'Visa-free destinations' : searchParams.destination}
+                  value={visaFreeOnly ? 'Visa-free destinations' : searchAnywhere ? 'Anywhere' : searchParams.destination}
                   onChange={handleChange}
+                  onFocus={(e) => {
+                    // If "Anywhere" is selected, clear it when user focuses to type
+                    if (searchAnywhere) {
+                      setSearchAnywhere(false);
+                      setSearchParams({ ...searchParams, destination: '' });
+                    }
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (destinationSuggestions.length > 0) setShowDestinationSuggestions(true);
+                    if (!visaFreeOnly) {
+                      setShowDestinationSuggestions(true);
+                    }
                   }}
                   placeholder={visaFreeOnly ? 'Will show visa-free options' : 'City or airport'}
-                  required={!visaFreeOnly}
+                  required={!visaFreeOnly && !searchAnywhere}
                   autoComplete="off"
                   disabled={visaFreeOnly}
                 />
-                {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+                {showDestinationSuggestions && !visaFreeOnly && (
                   <div className="autocomplete-dropdown" onClick={(e) => e.stopPropagation()}>
-                    {destinationSuggestions.map((airport) => (
-                      <div
-                        key={airport.id}
-                        className="autocomplete-item"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          selectAirport(airport, 'destination');
-                        }}
-                      >
-                        <strong>{airport.iataCode}</strong> - {airport.name}
-                        <br />
-                        <small>{airport.address?.cityName}, {airport.address?.countryName}</small>
-                      </div>
-                    ))}
+                    {/* Anywhere option - always shown first */}
+                    <div
+                      className="autocomplete-item anywhere-option"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSearchAnywhere(true);
+                        setSearchParams({ ...searchParams, destination: 'Anywhere' });
+                        setShowDestinationSuggestions(false);
+                      }}
+                    >
+                      <strong>✈️ Anywhere</strong>
+                      <br />
+                      <small>Search all available destinations from your origin</small>
+                    </div>
+                    {destinationSuggestions.length > 0 && (
+                      <>
+                        <div className="dropdown-divider"></div>
+                        {destinationSuggestions.map((airport) => (
+                          <div
+                            key={airport.id}
+                            className="autocomplete-item"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              selectAirport(airport, 'destination');
+                            }}
+                          >
+                            <strong>{airport.iataCode}</strong> - {airport.name}
+                            <br />
+                            <small>{airport.address?.cityName}, {airport.address?.countryName}</small>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -361,25 +528,21 @@ const FlightSearch = () => {
                     type="checkbox"
                     checked={visaFreeOnly}
                     onChange={(e) => {
-                      setVisaFreeOnly(e.target.checked);
-                      if (e.target.checked) {
+                      const checked = e.target.checked;
+                      setVisaFreeOnly(checked);
+                      if (checked) {
+                        setSearchParams({ ...searchParams, destination: 'ANYWHERE' });
+                        setSearchAnywhere(false);
+                      } else {
                         setSearchParams({ ...searchParams, destination: '' });
                       }
                     }}
                   />
-                  <span>My visa-free options</span>
+                  <span>🌍 My visa-free destinations</span>
                 </label>
               )}
               <button type="submit" className="btn btn-primary" disabled={loading}>
                 <FaSearch /> {loading ? 'Searching...' : 'Search Flights'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={loadRecommendations}
-                disabled={loading}
-              >
-                Get Recommendations
               </button>
             </div>
           </div>
@@ -387,47 +550,178 @@ const FlightSearch = () => {
       </div>
 
       <div className="results-tabs">
-        <button
-          className={`tab ${activeTab === 'search' ? 'active' : ''}`}
-          onClick={() => setActiveTab('search')}
-        >
-          Search Results ({flights.length})
-        </button>
-        <button
-          className={`tab ${activeTab === 'recommendations' ? 'active' : ''}`}
-          onClick={() => setActiveTab('recommendations')}
-        >
-          Recommendations ({recommendations.length})
-        </button>
+        <div className="tabs-left">
+          <button
+            className={`tab ${activeTab === 'search' ? 'active' : ''}`}
+            onClick={() => setActiveTab('search')}
+          >
+            Search Results ({flights.length})
+          </button>
+          {isAuthenticated && (
+            <button
+              className={`tab ${activeTab === 'recommendations' ? 'active' : ''}`}
+              onClick={() => setActiveTab('recommendations')}
+            >
+              Recommendations ({recommendations.length})
+            </button>
+          )}
+        </div>
+        {isAuthenticated && (
+          <button
+            type="button"
+            className="btn btn-recommendations-tab"
+            onClick={loadRecommendations}
+            disabled={loading || !searchParams.origin}
+            title={!searchParams.origin ? 'Enter origin airport first' : 'Get AI-powered destination recommendations'}
+          >
+            <span className="btn-icon">✨</span>
+            <span className="btn-text">
+              <strong>Discover Destinations</strong>
+            </span>
+          </button>
+        )}
       </div>
+
+      {(flights.length > 0 || recommendations.length > 0) && activeTab !== 'recommendations' && (
+        <div className="sort-controls">
+          <label htmlFor="sortSelect">Sort by:</label>
+          <select 
+            id="sortSelect"
+            value={sortBy === 'none' ? 'none' : `${sortBy}-${sortOrder}`}
+            onChange={handleSortChange}
+            className="sort-select"
+          >
+            <option value="price-asc">Price: Low to High (Default)</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="duration-asc">Duration: Shortest First</option>
+            <option value="duration-desc">Duration: Longest First</option>
+          </select>
+        </div>
+      )}
 
       {activeTab === 'search' && (
         <div className="results">
-          {flights.length === 0 ? (
+          {loading ? (
+            <div className="flights-list">
+              {Array(3).fill(0).map((_, index) => (
+                <FlightCardSkeleton key={index} />
+              ))}
+            </div>
+          ) : flights.length === 0 ? (
             <p className="no-results">No flights found. Try searching with different criteria.</p>
           ) : (
             <div className="flights-list">
-              {flights.slice(0, 10).map((flight, index) => (
-                <div key={index} className="flight-card">
-                  <div className="flight-info">
-                    <h3>{flight.itineraries?.[0]?.segments?.[0]?.carrierCode || 'Airline'}</h3>
-                    <p>
-                      {searchParams.origin} → {searchParams.destination}
-                    </p>
-                    <p className="flight-duration">
-                      Duration: {flight.itineraries?.[0]?.duration || 'N/A'}
-                    </p>
-                  </div>
-                  <div className="flight-price">
-                    <div className="price">
-                      {flight.price?.currency} {flight.price?.total}
+              {getSortedFlights(flights).slice(0, 10).map((flight, index) => {
+                const carrierCode = flight.itineraries?.[0]?.segments?.[0]?.carrierCode;
+                const airlineName = getAirlineName(carrierCode);
+                const bookingUrl = getAirlineBookingUrl(carrierCode);
+                
+                // Get the actual destination from flight data
+                const actualDestination = flight.itineraries?.[0]?.segments?.[flight.itineraries[0]?.segments?.length - 1]?.arrival?.iataCode;
+                const destination = (searchAnywhere || visaFreeOnly) ? actualDestination : searchParams.destination;
+                
+                // Check if it's a round trip (has return flight)
+                const isRoundTrip = flight.itineraries?.length > 1;
+                const outboundDuration = formatDuration(flight.itineraries?.[0]?.duration);
+                const returnDuration = isRoundTrip ? formatDuration(flight.itineraries?.[1]?.duration) : null;
+                
+                // Get departure and arrival times
+                const outboundDeparture = formatTime(flight.itineraries?.[0]?.segments?.[0]?.departure?.at);
+                const outboundArrival = formatTime(flight.itineraries?.[0]?.segments?.[flight.itineraries[0]?.segments?.length - 1]?.arrival?.at);
+                const returnDeparture = isRoundTrip ? formatTime(flight.itineraries?.[1]?.segments?.[0]?.departure?.at) : null;
+                const returnArrival = isRoundTrip ? formatTime(flight.itineraries?.[1]?.segments?.[flight.itineraries[1]?.segments?.length - 1]?.arrival?.at) : null;
+                
+                return (
+                  <div key={index} className="flight-card">
+                    <div className="flight-header">
+                      <div className="airline-info">
+                        <img 
+                          src={getAirlineLogoUrl(carrierCode)} 
+                          alt={airlineName}
+                          className="airline-logo"
+                          onError={(e) => e.target.style.display = 'none'}
+                        />
+                        <div className="airline-details">
+                          <h3 className="airline-name">{airlineName}</h3>
+                          <span className="airline-code">{carrierCode}</span>
+                        </div>
+                      </div>
+                      <div className="flight-price">
+                        <span className="price-label">From</span>
+                        <div className="price">{flight.price?.currency} {flight.price?.total}</div>
+                      </div>
                     </div>
-                    <button className="btn btn-primary btn-sm" onClick={() => saveFlight(flight)}>
-                      Save Flight
-                    </button>
+                    
+                    {/* Outbound Flight */}
+                    <div className="flight-details">
+                      <div className="flight-route-label">Outbound</div>
+                      <div className="flight-route">
+                        <div className="flight-time-info">
+                          <span className="airport-code">{searchParams.origin}</span>
+                          <span className="flight-time">{outboundDeparture}</span>
+                        </div>
+                        <div className="route-line">
+                          <FaPlane className="plane-icon" />
+                        </div>
+                        <div className="flight-time-info">
+                          <span className="airport-code">{destination}</span>
+                          <span className="flight-time">{outboundArrival}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flight-meta">
+                        <div className="meta-item">
+                          <FaClock className="meta-icon" />
+                          <span>{outboundDuration || 'Duration not available'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Return Flight (if exists) */}
+                    {isRoundTrip && (
+                      <div className="flight-details">
+                        <div className="flight-route-label">Return</div>
+                        <div className="flight-route">
+                          <div className="flight-time-info">
+                            <span className="airport-code">{destination}</span>
+                            <span className="flight-time">{returnDeparture}</span>
+                          </div>
+                          <div className="route-line">
+                            <FaPlane className="plane-icon" style={{ transform: 'scaleX(-1)' }} />
+                          </div>
+                          <div className="flight-time-info">
+                            <span className="airport-code">{searchParams.origin}</span>
+                            <span className="flight-time">{returnArrival}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flight-meta">
+                          <div className="meta-item">
+                            <FaClock className="meta-icon" />
+                            <span>{returnDuration || 'Duration not available'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flight-actions">
+                      {bookingUrl && (
+                        <a 
+                          href={bookingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-primary"
+                        >
+                          Book on {airlineName} <FaExternalLinkAlt />
+                        </a>
+                      )}
+                      <button className="btn btn-secondary" onClick={() => saveFlight(flight)}>
+                        Save Flight
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -435,25 +729,57 @@ const FlightSearch = () => {
 
       {activeTab === 'recommendations' && (
         <div className="results">
-          {recommendations.length === 0 ? (
-            <p className="no-results">No recommendations yet. Click "Get Recommendations" above.</p>
-          ) : (
-            <div className="recommendations-list">
-              {recommendations.map((rec, index) => (
-                <div key={index} className="recommendation-card">
-                  <h3>{rec.destination.country}</h3>
-                  <div className="rec-details">
-                    <span className={`visa-badge ${rec.visaRequired ? 'required' : 'free'}`}>
-                      {rec.visaRequired ? 'Visa Required' : 'Visa Free'}
-                    </span>
-                    {rec.visaType && <span className="visa-type">{rec.visaType}</span>}
+          {loading ? (
+            <div className="recommendations-grid">
+              {Array(6).fill(0).map((_, index) => (
+                <div key={index} className="recommendation-card-skeleton">
+                  <div className="skeleton-image"></div>
+                  <div className="skeleton-content">
+                    <div className="skeleton-title"></div>
+                    <div className="skeleton-text"></div>
+                    <div className="skeleton-text short"></div>
                   </div>
-                  <p className="rec-reason">{rec.reason}</p>
-                  <div className="rec-score">
-                    <div className="score-bar">
-                      <div className="score-fill" style={{ width: `${rec.score}%` }}></div>
+                </div>
+              ))}
+            </div>
+          ) : recommendations.length === 0 ? (
+            <div className="no-recommendations">
+              <div className="empty-state">
+                <span className="empty-icon">🌍</span>
+                <h3>No recommendations yet</h3>
+                <p>Enter your origin airport and click "Discover Destinations" to get personalized travel recommendations!</p>
+              </div>
+            </div>
+          ) : (
+            <div className="recommendations-grid">
+              {recommendations.map((rec, index) => (
+                <div key={index} className="recommendation-card-modern">
+                  <div className="rec-image-container">
+                    <img 
+                      src={rec.imageUrl} 
+                      alt={rec.destination} 
+                      className="rec-image"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=600&fit=crop`;
+                      }}
+                    />
+                    <div className="rec-visa-badge">
+                      {rec.visaType === 'visa_free' ? 'Visa Free' : rec.visaType}
                     </div>
-                    <span>{rec.score}% Match</span>
+                  </div>
+                  <div className="rec-content">
+                    <h3 className="rec-title">{rec.destination}</h3>
+                    <p className="rec-description">{rec.description}</p>
+                    <button 
+                      className="rec-explore-btn"
+                      onClick={() => {
+                        setSearchParams(prev => ({ ...prev, destination: rec.airport }));
+                        setActiveTab('search');
+                      }}
+                    >
+                      <FaPlane /> Search Flights
+                    </button>
                   </div>
                 </div>
               ))}

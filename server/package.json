@@ -4,7 +4,7 @@
   "description": "Backend API for flight search engine",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "SET NODE_OPTIONS=--tls-min-v1.0 --tls-cipher-list=DEFAULT@SECLEVEL=0 && node index.js",
     "dev": "nodemon index.js"
   },
   "keywords": [],
@@ -19,10 +19,13 @@
     "dialogflow": "^1.2.0",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.2",
     "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.0.3",
+    "mongodb": "4.1",
+    "mongoose": "^6.0.0",
+    "openai": "^4.104.0",
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",
     "passport-google-oauth20": "^2.0.0",

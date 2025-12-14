@@ -32,6 +32,13 @@ export const flightService = {
     return response.data;
   },
 
+  getVisaFreeDestinations: async (searchParams) => {
+    const response = await api.get('/flights/visa-free-destinations', { 
+      params: searchParams 
+    });
+    return response.data;
+  },
+
   getSavedFlights: async () => {
     const response = await api.get('/users/saved-flights');
     return response.data;
@@ -75,6 +82,11 @@ export const paymentService = {
 
   cancelSubscription: async () => {
     const response = await api.post('/payments/cancel-subscription');
+    return response.data;
+  },
+
+  reactivateSubscription: async () => {
+    const response = await api.post('/payments/reactivate-subscription');
     return response.data;
   },
 

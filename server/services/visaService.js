@@ -1,23 +1,64 @@
-// Visa requirements data (simplified - in production use a real API)
-const visaRequirements = {
-  // Key: citizenshipCountryCode
-  US: {
-    visa_free: ['CA', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'JP', 'KR', 'AU'],
-    visa_on_arrival: ['TR'],
-    evisa: ['IN', 'KE', 'EG'],
-    visa_required: ['CN', 'RU', 'BR', 'ZA'],
-  },
-  TR: {
-    visa_free: ['DE', 'FR', 'IT', 'ES', 'GB', 'JP', 'KR', 'AZ', 'GE'],
-    visa_on_arrival: ['JO', 'LB'],
-    evisa: ['US', 'CA', 'AU', 'CN', 'IN', 'RU'],
-    visa_required: ['BR', 'ZA', 'NG'],
-  },
-  // Add more countries as needed
+const axios = require('axios');
+
+// Check visa requirement using free Passport Index API
+exports.checkVisaRequirement = async (citizenship, destination) => {
+  try {
+    // Use the free visa API (no authentication required)
+    const response = await axios.get(
+      `https://rough-sun-2523.fly.dev/visa/${citizenship}/${destination}`,
+      { timeout: 5000 }
+    );
+
+    const data = response.data;
+    const categoryName = data.category?.name?.toLowerCase() || 'visa required';
+    
+    return {
+      required: categoryName !== 'visa free' && categoryName !== 'freedom of movement',
+      type: categoryName.replace(/ /g, '_'),
+      note: getVisaNoteFromCategory(categoryName),
+      duration: data.dur || null,
+      passportCountry: data.passport?.name,
+      destinationCountry: data.destination?.name,
+      lastUpdated: data.last_updated,
+      details: data
+    };
+
+  } catch (error) {
+    // Silently use fallback data if API is down (no console spam)
+    return getFallbackVisaData(citizenship, destination);
+  }
 };
 
-// Check visa requirement for a citizenship and destination
-exports.checkVisaRequirement = (citizenship, destination) => {
+// Helper function to get readable note from category
+function getVisaNoteFromCategory(category) {
+  const notes = {
+    'visa free': 'No visa required - visa-free travel',
+    'visa on arrival': 'Visa available on arrival at the airport',
+    'e-visa': 'Electronic visa (eVisa) - apply online',
+    'visa required': 'Visa required - apply at embassy/consulate',
+    'eta': 'Electronic Travel Authorization required',
+    'covid ban': 'Travel restricted due to COVID-19',
+    'no admission': 'Travel not permitted',
+    'freedom of movement': 'Freedom of movement - no restrictions'
+  };
+  return notes[category] || 'Please check with embassy for requirements';
+}
+
+// Fallback visa data (simplified)
+function getFallbackVisaData(citizenship, destination) {
+  const visaRequirements = {
+    US: {
+      visa_free: ['CA', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'JP', 'KR', 'AU', 'NZ', 'IE', 'CH', 'NO', 'SE'],
+      evisa: ['IN', 'KE', 'EG', 'TR'],
+      visa_required: ['CN', 'RU', 'BR', 'ZA', 'VN', 'ID'],
+    },
+    TR: {
+      visa_free: ['RS', 'BA', 'MK', 'AL', 'ME', 'MD', 'UA', 'GE', 'AZ', 'KZ', 'KG', 'TJ', 'UZ', 'TM', 'MN', 'MY', 'SG', 'TH', 'PH', 'HK', 'MO', 'KR', 'JP', 'TW', 'CL', 'AR', 'BR', 'EC', 'CO', 'PA', 'MX', 'ZA', 'MA', 'TN'],
+      evisa: ['AU', 'NZ', 'IN', 'KE', 'OM', 'BH', 'KW', 'QA', 'SA'],
+      visa_required: ['US', 'CA', 'GB', 'IE', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'CH', 'SE', 'NO', 'DK', 'FI', 'PL', 'CZ', 'HU', 'GR', 'PT', 'CN', 'RU', 'EG', 'AE'],
+    },
+  };
+
   const citizenshipData = visaRequirements[citizenship];
   
   if (!citizenshipData) {
@@ -36,15 +77,7 @@ exports.checkVisaRequirement = (citizenship, destination) => {
     };
   }
 
-  if (citizenshipData.visa_on_arrival.includes(destination)) {
-    return {
-      required: true,
-      type: 'visa_on_arrival',
-      note: 'Visa available on arrival',
-    };
-  }
-
-  if (citizenshipData.evisa.includes(destination)) {
+  if (citizenshipData.evisa && citizenshipData.evisa.includes(destination)) {
     return {
       required: true,
       type: 'evisa',
@@ -57,7 +90,7 @@ exports.checkVisaRequirement = (citizenship, destination) => {
     type: 'visa_required',
     note: 'Visa required - apply at embassy',
   };
-};
+}
 
 // Get recommended destinations based on citizenship and existing visas
 exports.getRecommendedDestinations = (citizenship, existingVisas = []) => {
@@ -136,5 +169,3 @@ exports.getSeasonalDestinations = (month) => {
   if (month >= 6 && month <= 8) return seasonal.summer;
   return seasonal.fall;
 };
-
-module.exports = visaRequirements;

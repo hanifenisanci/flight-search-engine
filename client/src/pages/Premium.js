@@ -24,7 +24,9 @@ const Premium = () => {
       const response = await paymentService.getSubscriptionStatus();
       setSubscriptionStatus(response.data);
     } catch (error) {
-      console.error('Failed to load subscription status:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load subscription status:', error);
+      }
     }
   };
 
@@ -41,16 +43,17 @@ const Premium = () => {
   };
 
   const handleCancelSubscription = async () => {
-    if (!window.confirm('Are you sure you want to cancel your premium subscription?')) {
+    if (!window.confirm('Are you sure you want to cancel your premium subscription? You will keep premium access until the end of your current billing period.')) {
       return;
     }
 
     setLoading(true);
     try {
-      await paymentService.cancelSubscription();
-      updateUser({ ...user, isPremium: false });
-      toast.success('Subscription cancelled successfully');
-      navigate('/');
+      const response = await paymentService.cancelSubscription();
+      toast.success('Subscription cancelled. You will have premium access until ' + new Date(response.cancelAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+      // Reload subscription status to show the cancellation
+      const status = await paymentService.getSubscriptionStatus();
+      setSubscriptionStatus(status.data);
     } catch (error) {
       toast.error('Failed to cancel subscription');
     } finally {
@@ -58,18 +61,27 @@ const Premium = () => {
     }
   };
 
+  const handleReactivateSubscription = async () => {
+    setLoading(true);
+    try {
+      const response = await paymentService.reactivateSubscription();
+      toast.success('Subscription reactivated! Your next billing date is ' + new Date(response.nextBillingDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+      // Reload subscription status to show the reactivation
+      const status = await paymentService.getSubscriptionStatus();
+      setSubscriptionStatus(status.data);
+    } catch (error) {
+      toast.error('Failed to reactivate subscription');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const features = [
-    { name: 'Advanced Flight Search Filters', free: false, premium: true },
-    { name: 'Price Alerts & Notifications', free: false, premium: true },
-    { name: 'Unlimited Saved Flights', free: false, premium: true },
-    { name: 'Priority Customer Support', free: false, premium: true },
-    { name: 'Ad-Free Experience', free: false, premium: true },
-    { name: 'Flexible Date Search', free: false, premium: true },
-    { name: 'Multi-City Search', free: false, premium: true },
+    { name: 'Unlimited AI Chatbot Usage', free: false, premium: true },
     { name: 'Basic Flight Search', free: true, premium: true },
     { name: 'Travel Recommendations', free: true, premium: true },
     { name: 'Visa Requirements Check', free: true, premium: true },
-    { name: 'AI Travel Assistant', free: true, premium: true },
+    { name: 'Limited AI Chatbot (10 messages/day)', free: true, premium: false },
   ];
 
   if (user?.isPremium) {
@@ -84,26 +96,81 @@ const Premium = () => {
         {subscriptionStatus && (
           <div className="subscription-info">
             <h2>Subscription Details</h2>
+            
+            {subscriptionStatus.cancelAtPeriodEnd && (
+              <div className="cancellation-notice">
+                <strong>⚠️ Subscription Cancelled</strong>
+                <p>Your premium access will continue until {new Date(subscriptionStatus.cancelAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. You can still enjoy all premium benefits until then.</p>
+              </div>
+            )}
+            
             <div className="info-grid">
               <div className="info-item">
                 <strong>Status:</strong>
-                <span className="badge badge-success">{subscriptionStatus.status}</span>
+                <span className={`badge ${subscriptionStatus.cancelAtPeriodEnd ? 'badge-warning' : 'badge-success'}`}>
+                  {subscriptionStatus.cancelAtPeriodEnd ? 'Cancelling' : subscriptionStatus.status}
+                </span>
               </div>
-              {subscriptionStatus.currentPeriodEnd && (
+              <div className="info-item">
+                <strong>Plan:</strong>
+                <span>Premium - 1000 HUF/month</span>
+              </div>
+              <div className="info-item">
+                <strong>Member Since:</strong>
+                <span>{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</span>
+              </div>
+              {subscriptionStatus.currentPeriodEnd && !subscriptionStatus.cancelAtPeriodEnd && (
                 <div className="info-item">
-                  <strong>Renews:</strong>
-                  <span>{new Date(subscriptionStatus.currentPeriodEnd).toLocaleDateString()}</span>
+                  <strong>Next Billing Date:</strong>
+                  <span>{new Date(subscriptionStatus.currentPeriodEnd).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </div>
+              )}
+              {subscriptionStatus.cancelAtPeriodEnd && subscriptionStatus.cancelAt && (
+                <div className="info-item">
+                  <strong>Premium Until:</strong>
+                  <span>{new Date(subscriptionStatus.cancelAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </div>
+              )}
+              {subscriptionStatus.subscriptionStartDate && (
+                <div className="info-item">
+                  <strong>Subscription Started:</strong>
+                  <span>{new Date(subscriptionStatus.subscriptionStartDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                 </div>
               )}
             </div>
 
-            <button
-              className="btn btn-danger mt-3"
-              onClick={handleCancelSubscription}
-              disabled={loading}
-            >
-              {loading ? 'Cancelling...' : 'Cancel Subscription'}
-            </button>
+            <div className="benefits-section">
+              <h3>Your Premium Benefits</h3>
+              <ul className="benefits-list">
+                <li className="benefit-item">Unlimited AI Chatbot Usage - Chat as much as you want!</li>
+              </ul>
+            </div>
+
+            {subscriptionStatus.status === 'inactive' ? (
+              <button
+                className="btn btn-primary mt-3"
+                onClick={handleSubscribe}
+                disabled={loading}
+              >
+                {loading ? 'Processing...' : 'Restart Subscription'}
+              </button>
+            ) : subscriptionStatus.cancelAtPeriodEnd ? (
+              <button
+                className="btn btn-success mt-3"
+                onClick={handleReactivateSubscription}
+                disabled={loading}
+              >
+                {loading ? 'Reactivating...' : 'Reactivate Subscription'}
+              </button>
+            ) : (
+              <button
+                className="btn btn-danger mt-3"
+                onClick={handleCancelSubscription}
+                disabled={loading}
+              >
+                {loading ? 'Cancelling...' : 'Cancel Subscription'}
+              </button>
+            )}
           </div>
         )}
 
@@ -136,8 +203,8 @@ const Premium = () => {
 
       <div className="pricing-card">
         <div className="price-tag">
-          <span className="currency">$</span>
-          <span className="amount">9.99</span>
+          <span className="amount">1000</span>
+          <span className="currency">HUF</span>
           <span className="period">/month</span>
         </div>
         <p className="price-description">Cancel anytime. No hidden fees.</p>
